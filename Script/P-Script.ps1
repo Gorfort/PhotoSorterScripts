@@ -65,16 +65,23 @@ do {
  
     # Create the destination folder with the specified folder name
     $destinationFolder = Join-Path -Path $destinationFolder -ChildPath $folderName
-    New-Item -ItemType Directory -Path $destinationFolder | Out-Null
+ 
+    # Check if the folder already exists in the destination folder
+    if (Test-Path $destinationFolder -PathType Container) {
+        Write-Host "Folder '$folderName' already exists in the destination. Adding photos to the existing folders." -ForegroundColor Yellow
+    }
+    else {
+        New-Item -ItemType Directory -Path $destinationFolder | Out-Null
+    }
  
     # Create RAW, JPEG, and Video folders inside the destination folder
     $rawFolderPath = Join-Path -Path $destinationFolder -ChildPath "RAW"
     $jpegFolderPath = Join-Path -Path $destinationFolder -ChildPath "JPEG"
     $videoFolderPath = Join-Path -Path $destinationFolder -ChildPath "Video"
  
-    New-Item -ItemType Directory -Path $rawFolderPath | Out-Null
-    New-Item -ItemType Directory -Path $jpegFolderPath | Out-Null
-    New-Item -ItemType Directory -Path $videoFolderPath | Out-Null
+    New-Item -ItemType Directory -Path $rawFolderPath -ErrorAction SilentlyContinue | Out-Null
+    New-Item -ItemType Directory -Path $jpegFolderPath -ErrorAction SilentlyContinue | Out-Null
+    New-Item -ItemType Directory -Path $videoFolderPath -ErrorAction SilentlyContinue | Out-Null
  
     # Get all the photos from the source folder (excluding subdirectories)
     $photos = Get-ChildItem -Path $sourceFolder
@@ -85,19 +92,28 @@ do {
  
     foreach ($photo in $photos) {
         if ($photo.Extension -eq ".CR3") {
-            Copy-Item $photo.FullName $rawFolderPath
+            $destinationPath = Join-Path -Path $rawFolderPath -ChildPath $photo.Name
         }
         elseif ($photo.Extension -eq ".JPEG" -or $photo.Extension -eq ".JPG") {
-            Copy-Item $photo.FullName $jpegFolderPath
+            $destinationPath = Join-Path -Path $jpegFolderPath -ChildPath $photo.Name
         }
         elseif ($photo.Extension -eq ".mp4" -or $photo.Extension -eq ".MOV") {
-            Copy-Item $photo.FullName $videoFolderPath
+            $destinationPath = Join-Path -Path $videoFolderPath -ChildPath $photo.Name
         }
- 
-        # Update the progress bar
-        $processedFiles++
-        $percentComplete = [math]::floor(($processedFiles / $totalFiles) * 100)
-        Write-Progress -Activity "Copying Files" -PercentComplete $percentComplete -Status "$processedFiles/$totalFiles files copied - $percentComplete% complete"
+     
+        # Check if the file already exists in the destination
+        if (Test-Path $destinationPath) {
+            Write-Host "File '$photo.Name' already exists in the destination. Skipping." -ForegroundColor Yellow
+        }
+        else {
+            # File doesn't exist, proceed with the copy
+            Copy-Item $photo.FullName $destinationPath -ErrorAction SilentlyContinue
+     
+            # Update the progress bar
+            $processedFiles++
+            $percentComplete = [math]::floor(($processedFiles / $totalFiles) * 100)
+            Write-Progress -Activity "Copying Files" -PercentComplete $percentComplete -Status "$processedFiles/$totalFiles files copied - $percentComplete% complete"
+        }
     }
  
     Clear-Host
