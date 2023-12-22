@@ -1,3 +1,37 @@
+<#
+.SYNOPSIS
+Ce script est conçu pour organiser et copier des photos d'un dossier source vers un
+vers un dossier de destination. Il classe les photos en fonction de leur extension de fichier
+(.CR3, .JPEG, .JPG, .mp4, .MOV) et les place dans des sous-dossiers (RAW, JPEG, Vidéo)
+dans le dossier de destination. 
+ 
+.DESCRIPTION
+Le script invite l'utilisateur à saisir un nom de dossier, un chemin d'accès au dossier source,
+et le chemin du dossier de destination. Il copie ensuite les photos de la source vers la destination 
+en les organisant dans des sous-dossiers en fonction de leur type de fichier.
+ 
+.PARAMETER Nom
+Spécifie le nom du dossier saisi par l'utilisateur.
+ 
+.PARAMETER Extension
+.ps1
+ 
+.INPUTS
+Le script prend en compte les noms de dossiers et les chemins d'accès saisis par l'utilisateur.
+ 
+.OUTPUTS
+Le script organise et copie les photos en fonction des critères spécifiés. 
+Il fournit des informations sur le processus de copie et l'organisation des dossiers.
+ 
+.EXAMPLE
+PS> .\P-Script.ps1
+Cet exemple montre comment exécuter le script, demander à l'utilisateur
+des noms de dossiers et des chemins d'accès, et organiser et copier les photos.
+ 
+.LINK
+Pas de lien sur ce script
+#>
+
 # Change the color of "Welcome" to blue
 Write-Host "Welcome" -ForegroundColor Blue
  
@@ -50,7 +84,7 @@ function AskRunAgain {
 }
  
 do {
-    
+
     # Prompt the user for the folder name
     $folderName = Get-FolderName -prompt "Enter folder name"
 
