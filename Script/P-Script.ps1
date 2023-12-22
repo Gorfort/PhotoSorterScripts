@@ -43,9 +43,8 @@ GitHub : https://github.com/Gorfort/P-Script-PowerShell
 
 #>
 
-# Function to prompt the user for a non-empty folder name
 Write-Host "Welcome" -ForegroundColor Blue
- 
+
 # Function to prompt the user for a non-empty folder name
 function Get-FolderName {
     param (
@@ -62,7 +61,7 @@ function Get-FolderName {
     } while ($true)
     return $folderName
 }
- 
+
 # Function to prompt the user for folder path and handle invalid input
 function Get-FolderPath {
     param (
@@ -79,7 +78,7 @@ function Get-FolderPath {
     } while ($true)
     return $folderPath
 }
- 
+
 # Function to ask the user if they want to run the script again
 function AskRunAgain {
     do {
@@ -96,51 +95,48 @@ function AskRunAgain {
 do {
     # Prompt the user for the folder name
     $folderName = Get-FolderName -prompt "Enter folder name"
- 
     # Prompt the user for the source folder
     $sourceFolder = Get-FolderPath -prompt "Enter the source folder path "
- 
     # Prompt the user for the destination folder
     $destinationFolder = Get-FolderPath -prompt "Enter the destination folder path "
- 
+
     # Check if the destination folder exists, if not, create it
     if (-not (Test-Path $destinationFolder -PathType Container)) {
         New-Item -ItemType Directory -Path $destinationFolder | Out-Null
     }
- 
+
     # Get the current month and year
     $currentMonth = Get-Date -Format "MMMM"
     $currentYear = Get-Date -Format "yyyy"
- 
+
     # Create a folder with the current month and year inside the destination folder
     $monthFolder = Join-Path -Path $destinationFolder -ChildPath "$currentMonth $currentYear"
     if (-not (Test-Path $monthFolder -PathType Container)) {
         New-Item -ItemType Directory -Path $monthFolder | Out-Null
     }
- 
+
     # Create the user-named folder inside the month folder
     $userFolder = Join-Path -Path $monthFolder -ChildPath $folderName
     if (-not (Test-Path $userFolder -PathType Container)) {
         New-Item -ItemType Directory -Path $userFolder | Out-Null
     }
- 
+
     # Create RAW, JPEG, and Video folders inside the user-named folder
     $rawFolderPath = Join-Path -Path $userFolder -ChildPath "RAW"
     $pngFolderPath = Join-Path -Path $userFolder -ChildPath "PNG"
     $jpegFolderPath = Join-Path -Path $userFolder -ChildPath "JPEG"
     $videoFolderPath = Join-Path -Path $userFolder -ChildPath "Video"
     $othersFolderPath = Join-Path -Path $userFolder -ChildPath "Others"
- 
+
     New-Item -ItemType Directory -Path $rawFolderPath -ErrorAction SilentlyContinue | Out-Null
     New-Item -ItemType Directory -Path $pngFolderPath -ErrorAction SilentlyContinue | Out-Null
     New-Item -ItemType Directory -Path $jpegFolderPath -ErrorAction SilentlyContinue | Out-Null
     New-Item -ItemType Directory -Path $videoFolderPath -ErrorAction SilentlyContinue | Out-Null
     New-Item -ItemType Directory -Path $othersFolderPath -ErrorAction SilentlyContinue | Out-Null
 
- 
     # Get all the photos from the source folder (excluding subdirectories)
     $photos = Get-ChildItem -Path $sourceFolder
- 
+
     # Initialize variables for the progress bar
     $totalFiles = $photos.Count
     $processedFiles = 0
@@ -159,43 +155,42 @@ do {
         elseif ($photo.Extension -eq ".png") {
             $destinationPath = Join-Path -Path $pngFolderPath -ChildPath $photo.Name
         }
-
         else {
             $destinationPath = Join-Path -Path $othersFolderPath -ChildPath $photo.Name
         }
-        # Copy the file to the destination
-        Copy-Item $photo.FullName $destinationPath -ErrorAction SilentlyContinue
-
-        # Update the progress bar
-        $processedFiles++
-        $percentComplete = [math]::floor(($processedFiles / $totalFiles) * 100)
-        Write-Progress -Activity "Copying Files" -PercentComplete $percentComplete -Status "$processedFiles/$totalFiles files copied - $percentComplete% complete"
+ 
+        # Check if the file already exists in the destination
+        if (-not (Test-Path $destinationPath)) {
+            # Copy the file to the destination
+            Copy-Item $photo.FullName $destinationPath -ErrorAction SilentlyContinue
+ 
+            # Update the progress bar
+            $processedFiles++
+            $percentComplete = [math]::floor(($processedFiles / $totalFiles) * 100)
+            Write-Progress -Activity "Copying Files" -PercentComplete $percentComplete -Status "$processedFiles/$totalFiles files copied - $percentComplete% complete"
+        }
     }
 
     # Change the color of "Photos have been copied successfully" to green
     Write-Host "Photos have been copied successfully." -ForegroundColor Green
- 
+
     # Check if folders are empty and delete them
     if ((Get-ChildItem $rawFolderPath | Measure-Object).Count -eq 0) {
         Remove-Item $rawFolderPath
     }
- 
     if ((Get-ChildItem $jpegFolderPath | Measure-Object).Count -eq 0) {
         Remove-Item $jpegFolderPath
     }
- 
     if ((Get-ChildItem $videoFolderPath | Measure-Object).Count -eq 0) {
         Remove-Item $videoFolderPath
     }
-
     if ((Get-ChildItem $othersFolderPath | Measure-Object).Count -eq 0) {
         Remove-Item $othersFolderPath
     }
-
     if ((Get-ChildItem $pngFolderPath | Measure-Object).Count -eq 0) {
         Remove-Item $pngFolderPath
     }
-
+    
     # Ask the user if they want to run the script again
     $runAgain = AskRunAgain
 } while ($runAgain -eq 'Y')
