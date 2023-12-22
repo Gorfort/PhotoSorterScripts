@@ -126,16 +126,25 @@ do {
  
     # Create RAW, JPEG, and Video folders inside the user-named folder
     $rawFolderPath = Join-Path -Path $userFolder -ChildPath "RAW"
+    $pngFolderPath = Join-Path -Path $userFolder -ChildPath "PNG"
     $jpegFolderPath = Join-Path -Path $userFolder -ChildPath "JPEG"
     $videoFolderPath = Join-Path -Path $userFolder -ChildPath "Video"
+    $othersFolderPath = Join-Path -Path $userFolder -ChildPath "Others"
  
     New-Item -ItemType Directory -Path $rawFolderPath -ErrorAction SilentlyContinue | Out-Null
+    New-Item -ItemType Directory -Path $pngFolderPath -ErrorAction SilentlyContinue | Out-Null
     New-Item -ItemType Directory -Path $jpegFolderPath -ErrorAction SilentlyContinue | Out-Null
-    New-Item -ItemType Directory -Path $videoFolderPath -ErrorAction SilentlyContinue
+    New-Item -ItemType Directory -Path $videoFolderPath -ErrorAction SilentlyContinue | Out-Null
+    New-Item -ItemType Directory -Path $othersFolderPath -ErrorAction SilentlyContinue | Out-Null
+
  
     # Get all the photos from the source folder (excluding subdirectories)
     $photos = Get-ChildItem -Path $sourceFolder
  
+    # Initialize variables for the progress bar
+    $totalFiles = $photos.Count
+    $processedFiles = 0
+
     # Copy files into the respective folders
     foreach ($photo in $photos) {
         if ($photo.Extension -eq ".CR3") {
@@ -147,14 +156,22 @@ do {
         elseif ($photo.Extension -eq ".mp4" -or $photo.Extension -eq ".MOV") {
             $destinationPath = Join-Path -Path $videoFolderPath -ChildPath $photo.Name
         }
- 
+        elseif ($photo.Extension -eq ".png") {
+            $destinationPath = Join-Path -Path $pngFolderPath -ChildPath $photo.Name
+        }
+
+        else {
+            $destinationPath = Join-Path -Path $othersFolderPath -ChildPath $photo.Name
+        }
         # Copy the file to the destination
         Copy-Item $photo.FullName $destinationPath -ErrorAction SilentlyContinue
+
+        # Update the progress bar
+        $processedFiles++
+        $percentComplete = [math]::floor(($processedFiles / $totalFiles) * 100)
+        Write-Progress -Activity "Copying Files" -PercentComplete $percentComplete -Status "$processedFiles/$totalFiles files copied - $percentComplete% complete"
     }
- 
-    # Rest of the script remains unchanged
- 
-    Clear-Host
+
     # Change the color of "Photos have been copied successfully" to green
     Write-Host "Photos have been copied successfully." -ForegroundColor Green
  
@@ -170,7 +187,15 @@ do {
     if ((Get-ChildItem $videoFolderPath | Measure-Object).Count -eq 0) {
         Remove-Item $videoFolderPath
     }
- 
+
+    if ((Get-ChildItem $othersFolderPath | Measure-Object).Count -eq 0) {
+        Remove-Item $othersFolderPath
+    }
+
+    if ((Get-ChildItem $pngFolderPath | Measure-Object).Count -eq 0) {
+        Remove-Item $pngFolderPath
+    }
+
     # Ask the user if they want to run the script again
     $runAgain = AskRunAgain
 } while ($runAgain -eq 'Y')
