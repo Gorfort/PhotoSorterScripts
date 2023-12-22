@@ -12,7 +12,7 @@ Changement 			: Aucun
 .SYNOPSIS
 Ce script est conçu pour organiser et copier des photos d'un dossier source vers un
 vers un dossier de destination. Il classe les photos en fonction de leur extension de fichier
-(.CR3, .JPEG, .JPG, .mp4, .MOV) et les place dans des sous-dossiers (RAW, JPEG, Vidéo)
+(.CR3, .JPEG, .JPG, .mp4, .MOV et autres) et les place dans des sous-dossiers (RAW, JPEG, Vidéo)
 dans le dossier de destination. 
  
 .DESCRIPTION
@@ -155,6 +155,7 @@ do {
         elseif ($photo.Extension -eq ".png") {
             $destinationPath = Join-Path -Path $pngFolderPath -ChildPath $photo.Name
         }
+        #Put all the other extensions into the "Other" Folders
         else {
             $destinationPath = Join-Path -Path $othersFolderPath -ChildPath $photo.Name
         }
@@ -190,7 +191,7 @@ do {
     if ((Get-ChildItem $pngFolderPath | Measure-Object).Count -eq 0) {
         Remove-Item $pngFolderPath
     }
-    
+
     # Ask the user if they want to run the script again
     $runAgain = AskRunAgain
 } while ($runAgain -eq 'Y')
