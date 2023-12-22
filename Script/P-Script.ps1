@@ -1,4 +1,14 @@
 <#
+
+.NOTES
+Nom du fichier 		: P-Script.ps1
+Prérequis 			: PowerShell 7.4.0
+Version du script 	: 1.0
+Auteur 				: Thibaud Racine
+Date de creation 	: 13.12.23
+Lieu 				: ETML, Sébeillion
+Changement 			: Aucun
+
 .SYNOPSIS
 Ce script est conçu pour organiser et copier des photos d'un dossier source vers un
 vers un dossier de destination. Il classe les photos en fonction de leur extension de fichier
@@ -29,7 +39,8 @@ Cet exemple montre comment exécuter le script, demander à l'utilisateur
 des noms de dossiers et des chemins d'accès, et organiser et copier les photos.
  
 .LINK
-Pas de lien sur ce script
+GitHub : https://github.com/Gorfort/P-Script-PowerShell
+
 #>
 
 # Change the color of "Welcome" to blue
