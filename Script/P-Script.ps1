@@ -1,6 +1,23 @@
 # Change the color of "Welcome" to blue
 Write-Host "Welcome" -ForegroundColor Blue
  
+# Function to prompt the user for a non-empty folder name
+function Get-FolderName {
+    param (
+        [string]$prompt
+    )
+    do {
+        $folderName = Read-Host -Prompt $prompt
+        if (-not $folderName) {
+            Write-Host "Folder name cannot be empty. Please enter a name." -ForegroundColor Red
+        }
+        else {
+            break
+        }
+    } while ($true)
+    return $folderName
+}
+
 # Function to prompt the user for folder path and handle invalid input
 function Get-FolderPath {
     param (
@@ -18,22 +35,6 @@ function Get-FolderPath {
     return $folderPath
 }
  
-# Function to prompt the user for a non-empty folder name
-function Get-FolderName {
-    param (
-        [string]$prompt
-    )
-    do {
-        $folderName = Read-Host -Prompt $prompt
-        if (-not $folderName) {
-            Write-Host "Folder name cannot be empty. Please enter a name." -ForegroundColor Red
-        }
-        else {
-            break
-        }
-    } while ($true)
-    return $folderName
-}
  
 # Function to ask the user if they want to run the script again
 function AskRunAgain {
@@ -49,11 +50,12 @@ function AskRunAgain {
 }
  
 do {
-    # Prompt the user for the source folder
-    $sourceFolder = Get-FolderPath -prompt "Enter the source folder path "
- 
+    
     # Prompt the user for the folder name
     $folderName = Get-FolderName -prompt "Enter folder name"
+
+    # Prompt the user for the source folder
+    $sourceFolder = Get-FolderPath -prompt "Enter the source folder path "
  
     # Prompt the user for the destination folder
     $destinationFolder = Get-FolderPath -prompt "Enter the destination folder path "
