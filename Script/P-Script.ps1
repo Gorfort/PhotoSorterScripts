@@ -43,7 +43,7 @@ GitHub : https://github.com/Gorfort/P-Script-PowerShell
 
 #>
 
-# Change the color of "Welcome" to blue
+# Function to prompt the user for a non-empty folder name
 Write-Host "Welcome" -ForegroundColor Blue
  
 # Function to prompt the user for a non-empty folder name
@@ -62,7 +62,7 @@ function Get-FolderName {
     } while ($true)
     return $folderName
 }
-
+ 
 # Function to prompt the user for folder path and handle invalid input
 function Get-FolderPath {
     param (
@@ -80,7 +80,6 @@ function Get-FolderPath {
     return $folderPath
 }
  
- 
 # Function to ask the user if they want to run the script again
 function AskRunAgain {
     do {
@@ -93,12 +92,11 @@ function AskRunAgain {
         }
     } while ($true)
 }
- 
-do {
 
+do {
     # Prompt the user for the folder name
     $folderName = Get-FolderName -prompt "Enter folder name"
-
+ 
     # Prompt the user for the source folder
     $sourceFolder = Get-FolderPath -prompt "Enter the source folder path "
  
@@ -110,33 +108,35 @@ do {
         New-Item -ItemType Directory -Path $destinationFolder | Out-Null
     }
  
-    # Create the destination folder with the specified folder name
-    $destinationFolder = Join-Path -Path $destinationFolder -ChildPath $folderName
+    # Get the current month and year
+    $currentMonth = Get-Date -Format "MMMM"
+    $currentYear = Get-Date -Format "yyyy"
  
-    # Check if the folder already exists in the destination folder
-    if (Test-Path $destinationFolder -PathType Container) {
-        Write-Host "Folder '$folderName' already exists in the destination. Adding photos to the existing folders." -ForegroundColor Yellow
-    }
-    else {
-        New-Item -ItemType Directory -Path $destinationFolder | Out-Null
+    # Create a folder with the current month and year inside the destination folder
+    $monthFolder = Join-Path -Path $destinationFolder -ChildPath "$currentMonth $currentYear"
+    if (-not (Test-Path $monthFolder -PathType Container)) {
+        New-Item -ItemType Directory -Path $monthFolder | Out-Null
     }
  
-    # Create RAW, JPEG, and Video folders inside the destination folder
-    $rawFolderPath = Join-Path -Path $destinationFolder -ChildPath "RAW"
-    $jpegFolderPath = Join-Path -Path $destinationFolder -ChildPath "JPEG"
-    $videoFolderPath = Join-Path -Path $destinationFolder -ChildPath "Video"
+    # Create the user-named folder inside the month folder
+    $userFolder = Join-Path -Path $monthFolder -ChildPath $folderName
+    if (-not (Test-Path $userFolder -PathType Container)) {
+        New-Item -ItemType Directory -Path $userFolder | Out-Null
+    }
+ 
+    # Create RAW, JPEG, and Video folders inside the user-named folder
+    $rawFolderPath = Join-Path -Path $userFolder -ChildPath "RAW"
+    $jpegFolderPath = Join-Path -Path $userFolder -ChildPath "JPEG"
+    $videoFolderPath = Join-Path -Path $userFolder -ChildPath "Video"
  
     New-Item -ItemType Directory -Path $rawFolderPath -ErrorAction SilentlyContinue | Out-Null
     New-Item -ItemType Directory -Path $jpegFolderPath -ErrorAction SilentlyContinue | Out-Null
-    New-Item -ItemType Directory -Path $videoFolderPath -ErrorAction SilentlyContinue | Out-Null
+    New-Item -ItemType Directory -Path $videoFolderPath -ErrorAction SilentlyContinue
  
     # Get all the photos from the source folder (excluding subdirectories)
     $photos = Get-ChildItem -Path $sourceFolder
  
-    # Initialize variables for the progress bar
-    $totalFiles = $photos.Count
-    $processedFiles = 0
- 
+    # Copy files into the respective folders
     foreach ($photo in $photos) {
         if ($photo.Extension -eq ".CR3") {
             $destinationPath = Join-Path -Path $rawFolderPath -ChildPath $photo.Name
@@ -147,21 +147,12 @@ do {
         elseif ($photo.Extension -eq ".mp4" -or $photo.Extension -eq ".MOV") {
             $destinationPath = Join-Path -Path $videoFolderPath -ChildPath $photo.Name
         }
-     
-        # Check if the file already exists in the destination
-        if (Test-Path $destinationPath) {
-            Write-Host "File '$photo.Name' already exists in the destination. Skipping." -ForegroundColor Yellow
-        }
-        else {
-            # File doesn't exist, proceed with the copy
-            Copy-Item $photo.FullName $destinationPath -ErrorAction SilentlyContinue
-     
-            # Update the progress bar
-            $processedFiles++
-            $percentComplete = [math]::floor(($processedFiles / $totalFiles) * 100)
-            Write-Progress -Activity "Copying Files" -PercentComplete $percentComplete -Status "$processedFiles/$totalFiles files copied - $percentComplete% complete"
-        }
+ 
+        # Copy the file to the destination
+        Copy-Item $photo.FullName $destinationPath -ErrorAction SilentlyContinue
     }
+ 
+    # Rest of the script remains unchanged
  
     Clear-Host
     # Change the color of "Photos have been copied successfully" to green
