@@ -53,6 +53,7 @@ function Get-FolderName {
     do {
         $folderName = Read-Host -Prompt $prompt
         if (-not $folderName) {
+            # In case the user didn't entered a name
             Write-Host "Folder name cannot be empty. Please enter a name." -ForegroundColor Red
         }
         else {
@@ -70,6 +71,7 @@ function Get-FolderPath {
     do {
         $folderPath = Read-Host -Prompt $prompt
         if (-not (Test-Path $folderPath -PathType Container)) {
+            # If the folder path is invalid
             Write-Host "Invalid folder path. Please try again." -ForegroundColor Red
         }
         else {
