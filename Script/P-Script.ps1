@@ -143,7 +143,7 @@ do {
 
     # Copy files into the respective folders
     foreach ($photo in $photos) {
-        if ($photo.Extension -eq ".CR3") {
+        if ($photo.Extension -eq ".CR3" -or $photo.Extension -eq ".RAW") {
             $destinationPath = Join-Path -Path $rawFolderPath -ChildPath $photo.Name
         }
         elseif ($photo.Extension -eq ".JPEG" -or $photo.Extension -eq ".JPG") {
