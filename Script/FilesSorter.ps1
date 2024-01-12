@@ -10,33 +10,33 @@ Lieu                 : ETML Lausanne, Suisse
 Changement           : Aucun
 
 .SYNOPSIS
-Ce script est conçu pour organiser et copier des photos d'un dossier source vers un
-vers un dossier de destination. Il classe les photos en fonction de leur extension de fichier
-(CR3, JPEG, JPG, MP4, MOV, CMR, MXF et autres) et les place dans des sous-dossiers (RAW, JPEG, PNG, Vidéo, Others)
-dans le dossier de destination. 
+This script is designed to organize and copy photos from a source folder to a
+to a destination folder. It classifies photos according to their file extension
+(CR3, JPEG, JPG, MP4, MOV, CMR, MXF and others) and places them in subfolders (RAW, JPEG, PNG, Video, Others)
+in the destination folder.
  
 .DESCRIPTION
-Le script invite l'utilisateur à saisir un nom de dossier, un chemin d'accès au dossier source,
-et le chemin du dossier de destination. Il copie ensuite les photos de la source vers la destination 
-en les organisant dans des sous-dossiers en fonction de leur type de fichier.
+The script prompts the user to enter a folder name, a path to the source folder,
+and the path to the destination folder. It then copies the photos from the source to the destination 
+organizing them into sub-folders according to file type.
  
 .PARAMETER Nom
-Spécifie le nom du dossier saisi par l'utilisateur.
+Specifies the folder name entered by the user.
  
 .PARAMETER Extension
 .ps1
  
 .INPUTS
-Le script prend en compte les noms de dossiers et les chemins d'accès saisis par l'utilisateur.
+The script takes into account folder names and paths entered by the user.
  
 .OUTPUTS
-Le script organise et copie les photos en fonction des critères spécifiés. 
-Il fournit des informations sur le processus de copie et l'organisation des dossiers.
+The script organizes and copies photos according to specified criteria. 
+It provides information on the copying process and folder organization.
  
 .EXAMPLE
-PS> .\P-Script.ps1
-Cet exemple montre comment exécuter le script, demander à l'utilisateur
-des noms de dossiers et des chemins d'accès, et organiser et copier les photos.
+PS> .\FilesSorter.ps1
+This example shows how to run the script, request folder names and paths from the user
+folder names and paths, and organize and copy photos.
  
 .LINK
 GitHub : https://github.com/Gorfort/P-Script-PowerShell
