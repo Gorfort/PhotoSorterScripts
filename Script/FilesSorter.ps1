@@ -191,6 +191,7 @@ do {
             # Update the progress bar
             $processedFiles++
             $percentComplete = [math]::floor(($processedFiles / $totalFiles) * 100)
+            # Write the progess bar with the number of files copied and the percentage
             Write-Progress -Activity "Copying Files" -PercentComplete $percentComplete -Status "$processedFiles/$totalFiles files copied - $percentComplete% complete"
         }
     }
