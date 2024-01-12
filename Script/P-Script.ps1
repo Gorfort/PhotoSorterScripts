@@ -88,6 +88,7 @@ function AskRunAgain {
         if ($choice -eq 'Y' -or $choice -eq 'N') {
             return $choice
         }
+        # If the imput is invalid
         else {
             Write-Host "Invalid choice. Please enter Y or N." -ForegroundColor Red
         }
@@ -145,15 +146,19 @@ do {
 
     # Copy files into the respective folders
     foreach ($photo in $photos) {
+        # Put files with the "CR3" and "RAW" extensions into the "RAW" Folder.
         if ($photo.Extension -eq ".CR3" -or $photo.Extension -eq ".RAW") {
             $destinationPath = Join-Path -Path $rawFolderPath -ChildPath $photo.Name
         }
+        # Put files with the "JPEG" and "JPG" extensions into the "JPEG" Folder.
         elseif ($photo.Extension -eq ".JPEG" -or $photo.Extension -eq ".JPG") {
             $destinationPath = Join-Path -Path $jpegFolderPath -ChildPath $photo.Name
         }
-        elseif ($photo.Extension -eq ".mp4" -or $photo.Extension -eq ".MOV") {
+        # Put files with the "MP4", "MOV", "CMR", and "MXF" extensions into the "Video" Folder.
+        elseif ($photo.Extension -eq ".mp4" -or $photo.Extension -eq ".MOV" -or $photo.Extension -eq ".CRM" -or $photo.Extension -eq ".MXF") {
             $destinationPath = Join-Path -Path $videoFolderPath -ChildPath $photo.Name
         }
+        # Put files with the "PNG" extension into the "PNG" Folder.
         elseif ($photo.Extension -eq ".png") {
             $destinationPath = Join-Path -Path $pngFolderPath -ChildPath $photo.Name
         }
@@ -174,7 +179,7 @@ do {
         }
     }
 
-    # Change the color of "Photos have been copied successfully" to green
+    # Change the color of the text to green
     Write-Host "Photos have been copied successfully." -ForegroundColor Green
 
     # Check if folders are empty and delete them
