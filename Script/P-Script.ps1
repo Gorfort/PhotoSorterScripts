@@ -1,18 +1,18 @@
 <#
 
 .NOTES
-Nom du fichier 		: P-Script.ps1
-Prérequis 			: PowerShell 7.4.0
-Version du script 	: 1.0
-Auteur 				: Thibaud Racine
-Date de creation 	: 13.12.23
-Lieu 				: ETML, Sébeillion
-Changement 			: Aucun
+Nom du fichier       : P-Script.ps1
+Prérequis            : PowerShell 7.4.0
+Version du script    : 1.0
+Auteur               : Thibaud Racine
+Date de creation     : 13.12.23
+Lieu                 : ETML Lausanne, Suisse
+Changement           : Aucun
 
 .SYNOPSIS
 Ce script est conçu pour organiser et copier des photos d'un dossier source vers un
 vers un dossier de destination. Il classe les photos en fonction de leur extension de fichier
-(.CR3, .JPEG, .JPG, .mp4, .MOV et autres) et les place dans des sous-dossiers (RAW, JPEG, Vidéo)
+(CR3, JPEG, JPG, MP4, MOV, CMR, MXF et autres) et les place dans des sous-dossiers (RAW, JPEG, PNG, Vidéo, Others)
 dans le dossier de destination. 
  
 .DESCRIPTION
@@ -46,28 +46,34 @@ GitHub : https://github.com/Gorfort/P-Script-PowerShell
 Write-Host "Welcome" -ForegroundColor Blue
 
 # Function to prompt the user for a non-empty folder name
+# param: $prompt - The prompt message for the user
 function Get-FolderName {
     param (
         [string]$prompt
     )
+
+    # Loop until a non-empty folder name is provided
     do {
         $folderName = Read-Host -Prompt $prompt
         if (-not $folderName) {
-            # In case the user didn't entered a name
+            # In case the user didn't enter a name
             Write-Host "Folder name cannot be empty. Please enter a name." -ForegroundColor Red
         }
         else {
             break
         }
     } while ($true)
+
     return $folderName
 }
 
 # Function to prompt the user for folder path and handle invalid input
+# param: $prompt - The prompt message for the user
 function Get-FolderPath {
     param (
         [string]$prompt
     )
+    # Loop until a valid folder path is provided
     do {
         $folderPath = Read-Host -Prompt $prompt
         if (-not (Test-Path $folderPath -PathType Container)) {
@@ -78,23 +84,27 @@ function Get-FolderPath {
             break
         }
     } while ($true)
+
     return $folderPath
 }
 
 # Function to ask the user if they want to run the script again
+# param: $choice - The user's choice (Y/N)
 function AskRunAgain {
+    # Loop until a valid choice is provided
     do {
         $choice = Read-Host "Do you want to run the script again? (Y/N)"
         if ($choice -eq 'Y' -or $choice -eq 'N') {
             return $choice
         }
-        # If the imput is invalid
+        # If the input is invalid
         else {
             Write-Host "Invalid choice. Please enter Y or N." -ForegroundColor Red
         }
     } while ($true)
 }
 
+# Main script execution loop
 do {
     # Prompt the user for the folder name
     $folderName = Get-FolderName -prompt "Enter folder name"
@@ -162,7 +172,7 @@ do {
         elseif ($photo.Extension -eq ".png") {
             $destinationPath = Join-Path -Path $pngFolderPath -ChildPath $photo.Name
         }
-        #Put all the other extensions into the "Other" Folders
+        # Put all the other extensions into the "Other" Folders
         else {
             $destinationPath = Join-Path -Path $othersFolderPath -ChildPath $photo.Name
         }
@@ -201,4 +211,5 @@ do {
 
     # Ask the user if they want to run the script again
     $runAgain = AskRunAgain
+
 } while ($runAgain -eq 'Y')
