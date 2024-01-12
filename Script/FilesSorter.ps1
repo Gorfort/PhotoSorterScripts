@@ -6,7 +6,7 @@ Requirements         : PowerShell 7.4.0
 Script version       : 1.0
 Author               : Thibaud Racine
 Creation date        : 13.12.23
-Location             : ETML Lausanne, Suisse
+Location             : ETML Lausanne, Switzerland
 Changes              : None
 
 .SYNOPSIS
@@ -46,7 +46,7 @@ GitHub : https://github.com/Gorfort/P-Script-PowerShell
 Write-Host "Welcome" -ForegroundColor Blue
 
 # Function to prompt the user for a non-empty folder name
-# param: $prompt - The prompt message for the user
+# param: $prompt - The folder name gave by the user
 function Get-FolderName {
     param (
         [string]$prompt
@@ -56,7 +56,7 @@ function Get-FolderName {
     do {
         $folderName = Read-Host -Prompt $prompt
         if (-not $folderName) {
-            # In case the user didn't enter a name
+            # In case the folder name is empty
             Write-Host "Folder name cannot be empty. Please enter a name." -ForegroundColor Red
         }
         else {
@@ -68,7 +68,7 @@ function Get-FolderName {
 }
 
 # Function to prompt the user for folder path and handle invalid input
-# param: $prompt - The prompt message for the user
+# param: $prompt - The folder name gave by the user
 function Get-FolderPath {
     param (
         [string]$prompt
@@ -94,6 +94,7 @@ function AskRunAgain {
     # Loop until a valid choice is provided
     do {
         $choice = Read-Host "Do you want to run the script again? (Y/N)"
+        # Choice between Yes (Y) and No (N)
         if ($choice -eq 'Y' -or $choice -eq 'N') {
             return $choice
         }
@@ -118,19 +119,23 @@ do {
         New-Item -ItemType Directory -Path $destinationFolder | Out-Null
     }
 
-    # Get the current month and year
+    # Get the current month and year from the system
     $currentMonth = Get-Date -Format "MMMM"
     $currentYear = Get-Date -Format "yyyy"
 
     # Create a folder with the current month and year inside the destination folder
     $monthFolder = Join-Path -Path $destinationFolder -ChildPath "$currentMonth $currentYear"
+    # Check if the folder exists
     if (-not (Test-Path $monthFolder -PathType Container)) {
+        # If the folder doesn't exist, create a new directory
         New-Item -ItemType Directory -Path $monthFolder | Out-Null
     }
 
     # Create the user-named folder inside the month folder
     $userFolder = Join-Path -Path $monthFolder -ChildPath $folderName
+    # Check if the folder exists
     if (-not (Test-Path $userFolder -PathType Container)) {
+        # If the folder doesn't exist, create a new directory
         New-Item -ItemType Directory -Path $userFolder | Out-Null
     }
 
@@ -141,6 +146,7 @@ do {
     $videoFolderPath = Join-Path -Path $userFolder -ChildPath "Video"
     $othersFolderPath = Join-Path -Path $userFolder -ChildPath "Others"
 
+    # Folder creation
     New-Item -ItemType Directory -Path $rawFolderPath -ErrorAction SilentlyContinue | Out-Null
     New-Item -ItemType Directory -Path $pngFolderPath -ErrorAction SilentlyContinue | Out-Null
     New-Item -ItemType Directory -Path $jpegFolderPath -ErrorAction SilentlyContinue | Out-Null
@@ -192,19 +198,23 @@ do {
     # Change the color of the text to green
     Write-Host "Photos have been copied successfully." -ForegroundColor Green
 
-    # Check if folders are empty and delete them
+    # Deletes "RAW" folder if empty 
     if ((Get-ChildItem $rawFolderPath | Measure-Object).Count -eq 0) {
         Remove-Item $rawFolderPath
     }
+    # Deletes "JPEG" folder if empty 
     if ((Get-ChildItem $jpegFolderPath | Measure-Object).Count -eq 0) {
         Remove-Item $jpegFolderPath
     }
+    # Deletes "Video" folder if empty 
     if ((Get-ChildItem $videoFolderPath | Measure-Object).Count -eq 0) {
         Remove-Item $videoFolderPath
     }
+    # Deletes "Others" folder if empty 
     if ((Get-ChildItem $othersFolderPath | Measure-Object).Count -eq 0) {
         Remove-Item $othersFolderPath
     }
+    # Deletes "PNG" folder if empty 
     if ((Get-ChildItem $pngFolderPath | Measure-Object).Count -eq 0) {
         Remove-Item $pngFolderPath
     }
