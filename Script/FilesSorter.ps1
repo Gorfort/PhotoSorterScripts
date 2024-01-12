@@ -1,13 +1,13 @@
 <#
 
 .NOTES
-Nom du fichier       : P-Script.ps1
-Prérequis            : PowerShell 7.4.0
-Version du script    : 1.0
-Auteur               : Thibaud Racine
-Date de creation     : 13.12.23
-Lieu                 : ETML Lausanne, Suisse
-Changement           : Aucun
+File Name            : P-Script.ps1
+Requirements         : PowerShell 7.4.0
+Script version       : 1.0
+Author               : Thibaud Racine
+Creation date        : 13.12.23
+Location             : ETML Lausanne, Suisse
+Changes              : None
 
 .SYNOPSIS
 This script is designed to organize and copy photos from a source folder to a
