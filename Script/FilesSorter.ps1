@@ -3,11 +3,10 @@
 .NOTES
 File Name            : P-Script.ps1
 Requirements         : PowerShell 7.4.0
-Script version       : 1.0
+Script version       : 1.0.5
 Author               : Thibaud Racine
 Creation date        : 13.12.23
 Location             : ETML Lausanne, Switzerland
-Changes              : None
 
 .SYNOPSIS
 This script is designed to organize and copy photos from a source folder to a
@@ -16,18 +15,15 @@ to a destination folder. It classifies photos according to their file extension
 in the destination folder.
  
 .DESCRIPTION
-The script prompts the user to enter a folder name, a path to the source folder,
+The script prompts the user to enter a path to the source folder,
 and the path to the destination folder. It then copies the photos from the source to the destination 
-organizing them into sub-folders according to file type.
- 
-.PARAMETER Nom
-Specifies the folder name entered by the user.
+organizing them into sub-folders according to file type and metadata time.
  
 .PARAMETER Extension
 .ps1
  
 .INPUTS
-The script takes into account folder names and paths entered by the user.
+The script takes into account paths entered by the user.
  
 .OUTPUTS
 The script organizes and copies photos according to specified criteria. 
@@ -35,8 +31,7 @@ It provides information on the copying process and folder organization.
  
 .EXAMPLE
 PS> .\FilesSorter.ps1
-This example shows how to run the script, request folder names and paths from the user
-folder names and paths, and organize and copy photos.
+This example shows how to run the script.
  
 .LINK
 GitHub : https://github.com/Gorfort/P-Script-PowerShell
