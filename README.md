@@ -1,4 +1,4 @@
-# Photo Organizer Script
+# Photo Organizer Script 📷
 
 ## Overview
 This PowerShell script automates the organization and copying of photos from a source folder to a destination folder. It classifies files based on their extensions (e.g., CR3, JPEG, JPG, MP4, MOV, etc.) and organizes them into subfolders such as **RAW**, **JPEG**, **PNG**, **Video**, and **Others**.
