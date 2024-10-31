@@ -40,8 +40,8 @@ GitHub : https://github.com/Gorfort/P-Script-PowerShell
 
 Write-Host "Welcome" -ForegroundColor Blue
 
-# Specify the folder name directly (change "YourFolderName" to whatever name you want)
-$folderName = "YourFolderName"
+# Specify the folder name directly
+$folderName = "Photos"
 
 # Function to prompt the user for folder path and handle invalid input
 function Get-FolderPath {
