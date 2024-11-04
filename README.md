@@ -23,4 +23,3 @@ This PowerShell script automates the organization and copying of files from a so
 
 ## Ideas for future versions 
 - bash version of the script
-- script that gathers files from a multi layer folder into a single one in order to use the main script to sort the photos correctly.
