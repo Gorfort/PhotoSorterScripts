@@ -79,6 +79,7 @@ do {
     $files = Get-ChildItem -Path $sourceFolder -File -Recurse
     $totalFiles = $files.Count
     $processedFiles = 0
+    $uniqueSourceFolders = @{}
 
     foreach ($file in $files) {
         try {
@@ -89,6 +90,9 @@ do {
             if (-not (Test-Path $destinationPath)) {
                 Copy-Item -Path $file.FullName -Destination $destinationPath -ErrorAction SilentlyContinue
                 $processedFiles++
+                
+                # Track the unique source folder
+                $uniqueSourceFolders[$file.DirectoryName] = $true
             } else {
                 Write-Host "File $($file.Name) already exists in the destination. Skipping." -ForegroundColor Yellow
             }
@@ -104,6 +108,10 @@ do {
 
     # Final message for completion
     Write-Host "All files have been copied successfully." -ForegroundColor Green
+    
+    # Summary of moved files and source folders
+    $sourceFolderCount = $uniqueSourceFolders.Keys.Count
+    Write-Host "$processedFiles files have been moved from $sourceFolderCount folder(s)." -ForegroundColor Cyan
 
     $runAgain = AskRunAgain
 
