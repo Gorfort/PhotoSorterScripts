@@ -6,7 +6,7 @@ This PowerShell script automates the organization and copying of photos from a s
 ## Features
 - **User-Friendly**: Prompts for source and destination folder paths.
 - **Organized Structure**: Sorts files into year and month folders, with user-defined subfolders for each file type.
-- **Error Handling**: Catches and displays errors during the copying process.
+- **Multi Destination**: You can copy your files into different folders at the same time.
 - **Progress Tracking**: Displays the progress of file copying in real-time.
 - **Summary**: When the script is done you get a summary of the moved files.
 
