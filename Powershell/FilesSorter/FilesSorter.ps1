@@ -36,7 +36,7 @@ First enter into the directory where the script is located.
 This example shows how to run the script.
  
 .LINK
-GitHub : https://github.com/Gorfort/P-Script-PowerShell
+GitHub : https://github.com/Gorfort/PhotoSorter-PowerShell
 
 #>
 
