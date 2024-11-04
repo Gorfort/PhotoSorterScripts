@@ -30,7 +30,9 @@ The script organizes and copies photos according to specified criteria.
 It provides information on the copying process and folder organization.
  
 .EXAMPLE
-PS> .\FilesSorter.ps1
+First enter into the directory where the script is located.
+- cd Script
+- .\FilesSorter.ps1
 This example shows how to run the script.
  
 .LINK
