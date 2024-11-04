@@ -21,5 +21,5 @@ This PowerShell script automates the organization and copying of files from a so
    .\FilesSorter.ps1
 
 
-## Ideas for future versions 
+## In Progress
 - bash version of the script
