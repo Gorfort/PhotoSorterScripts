@@ -72,6 +72,9 @@ function AskRunAgain {
     } while ($true)
 }
 
+# Initialize a hash table to track files by month and category
+$fileCounts = @{}
+
 # Main script execution loop
 do {
     $sourceFolder = Get-FolderPath -prompt "Enter the source folder path "
@@ -131,14 +134,19 @@ do {
             # Determine the destination path based on file extension
             if ($photo.Extension -eq ".CR3" -or $photo.Extension -eq ".RAW" -or $photo.Extension -eq ".DNG") {
                 $destinationPath = Join-Path -Path $rawFolderPath -ChildPath $photo.Name
+                $fileType = "RAW"
             } elseif ($photo.Extension -eq ".JPEG" -or $photo.Extension -eq ".JPG") {
                 $destinationPath = Join-Path -Path $jpegFolderPath -ChildPath $photo.Name
+                $fileType = "JPEG"
             } elseif ($photo.Extension -eq ".mp4" -or $photo.Extension -eq ".MOV" -or $photo.Extension -eq ".CRM" -or $photo.Extension -eq ".MXF") {
                 $destinationPath = Join-Path -Path $videoFolderPath -ChildPath $photo.Name
+                $fileType = "Video"
             } elseif ($photo.Extension -eq ".png") {
                 $destinationPath = Join-Path -Path $pngFolderPath -ChildPath $photo.Name
+                $fileType = "PNG"
             } else {
                 $destinationPath = Join-Path -Path $othersFolderPath -ChildPath $photo.Name
+                $fileType = "Others"
             }
 
             # Copy the file if it doesn't already exist in the destination
@@ -148,6 +156,15 @@ do {
                 $processedFiles++
                 $percentComplete = [math]::floor(($processedFiles / $totalFiles) * 100)
                 Write-Progress -Activity "Copying Files" -PercentComplete $percentComplete -Status "$processedFiles/$totalFiles files copied - $percentComplete% complete"
+
+                # Track file counts
+                $monthKey = "$currentMonth $currentYear"
+                if (-not $fileCounts.ContainsKey($monthKey)) {
+                    $fileCounts[$monthKey] = @{
+                        "RAW" = 0; "JPEG" = 0; "PNG" = 0; "Video" = 0; "Others" = 0
+                    }
+                }
+                $fileCounts[$monthKey][$fileType]++
             }
         } catch {
             Write-Host "Error processing $($photo.Name): $_" -ForegroundColor Yellow
@@ -156,45 +173,27 @@ do {
 
     Write-Host "Photos have been copied successfully." -ForegroundColor Green
 
-    # Get all year folders in the destination folder
-    $yearFolders = Get-ChildItem -Path $destinationFolder -Directory
+    # Display summary of file counts per month
+    Write-Host "`nSummary of files moved:" -ForegroundColor Cyan
+    foreach ($month in $fileCounts.Keys) {
+        $counts = $fileCounts[$month]
+        $output = "$month :"
 
-    # Loop through each year folder
-    foreach ($yearFolder in $yearFolders) {
-        # Loop through each month folder in the year folder
-        $monthFolders = Get-ChildItem -Path $yearFolder.FullName -Directory
-        foreach ($monthFolder in $monthFolders) {
-            # Construct the user folder path based on the folder name
-            $userFolderPath = Join-Path -Path $monthFolder.FullName -ChildPath $folderName
-
-            if (Test-Path -Path $userFolderPath -PathType Container) {
-                # List of subfolders to check
-                $subFoldersToCheck = @("RAW", "JPEG", "Video", "Others", "PNG")
-
-                # Loop through each subfolder and delete if empty
-                foreach ($subFolder in $subFoldersToCheck) {
-                    $subFolderPath = Join-Path -Path $userFolderPath -ChildPath $subFolder
-                    if (Test-Path -Path $subFolderPath -PathType Container) {
-                        # Check if the subfolder is empty
-                        if ((Get-ChildItem -Path $subFolderPath -File -Recurse -Force | Measure-Object).Count -eq 0) {
-                            Remove-Item -Path $subFolderPath -Recurse -Force
-                        }
-                    }
-                }
-
-                # Check if the user folder is empty and delete it if it is
-                if ((Get-ChildItem -Path $userFolderPath -Recurse -Force | Measure-Object).Count -eq 0) {
-                    Remove-Item -Path $userFolderPath -Recurse -Force
-                }
+        # Build the output string by including only non-zero file types
+        foreach ($fileType in $counts.Keys) {
+            if ($counts[$fileType] -gt 0) {
+                $output += " $($counts[$fileType]) $fileType files,"
             }
         }
-        
-        # Check if the month folder is empty and delete it if it is
-        if ((Get-ChildItem -Path $monthFolder.FullName -Recurse -Force | Measure-Object).Count -eq 0) {
-            Remove-Item -Path $monthFolder.FullName -Recurse -Force
+
+        # Remove trailing comma and display the result if there’s any file type to show
+        if ($output -ne "$month :") {
+            Write-Host ($output.TrimEnd(',')) -ForegroundColor Green
         }
     }
+
 
     $runAgain = AskRunAgain
 
 } while ($runAgain -eq 'Y')
+
