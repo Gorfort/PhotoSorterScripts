@@ -39,7 +39,7 @@ GitHub : https://github.com/Gorfort/PhotoSorter-PowerShell
 
 #>
 
-Write-Host "Welcome" -ForegroundColor Blue
+Write-Host "Welcome to the Files Gatherer" -ForegroundColor Blue
 
 # Function to prompt the user for a folder path and handle invalid input
 function Get-FolderPath {

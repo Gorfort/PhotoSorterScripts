@@ -40,7 +40,7 @@ GitHub : https://github.com/Gorfort/PhotoSorter-PowerShell
 
 #>
 
-Write-Host "Welcome" -ForegroundColor Blue
+Write-Host "Welcome to the Files Sorter" -ForegroundColor Blue
 
 # Specify the folder name directly
 $folderName = "Photos"
