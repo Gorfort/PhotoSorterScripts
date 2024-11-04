@@ -16,7 +16,7 @@ in the destination folder.
  
 .DESCRIPTION
 The script prompts the user to enter a path to the source folder,
-and the path to the destination folder. It then copies the photos from the source to the destination 
+and the path to the destination folders. It then copies the photos from the source to the destination 
 organizing them into sub-folders according to file type and metadata time.
  
 .PARAMETER Extension
@@ -101,6 +101,8 @@ function Get-DestinationFolders {
 
 # Initialize a hash table to track files by month and category
 $fileCounts = @{}
+# Create an array to track unique file names that have been processed
+$uniqueFilesProcessed = @()
 
 # Main script execution loop
 do {
@@ -114,6 +116,11 @@ do {
 
     foreach ($photo in $photos) {
         try {
+            # Check if the file has already been processed
+            if ($uniqueFilesProcessed -contains $photo.Name) {
+                continue  # Skip processing if already counted
+            }
+
             # Get the Date Taken from metadata or use LastWriteTime as a fallback
             $dateTaken = (Get-ItemProperty -Path $photo.FullName -Name DateTaken -ErrorAction SilentlyContinue).DateTaken
             if ($null -eq $dateTaken) {
@@ -185,6 +192,8 @@ do {
 
             # Increment the unique file count after processing all destination folders
             $processedFiles++
+            # Add the file name to the unique files array
+            $uniqueFilesProcessed += $photo.Name  # Add the file name to the unique files array
             $percentComplete = [math]::floor(($processedFiles / $totalFiles) * 100)
             Write-Progress -Activity "Copying Files" -PercentComplete $percentComplete -Status "$processedFiles/$totalFiles files copied - $percentComplete% complete"
 
@@ -255,7 +264,11 @@ do {
             }
         }
     }
-
     $runAgain = AskRunAgain
 
 } while ($runAgain -eq 'Y')
+
+if ($runAgain -eq 'N') {
+    Write-Host "Goodbye!" -ForegroundColor Green
+}
+
