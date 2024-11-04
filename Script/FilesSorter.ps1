@@ -107,7 +107,6 @@ do {
     $sourceFolder = Get-FolderPath -prompt "Enter the source folder path"
     $destinationFolders = Get-DestinationFolders
 
-
     # Get all the photos from the source folder (excluding subdirectories)
     $photos = Get-ChildItem -Path $sourceFolder -File
     $totalFiles = $photos.Count
@@ -222,6 +221,38 @@ do {
         # Remove trailing comma and display the result if there’s any file type to show
         if ($output -ne "$month :") {
             Write-Host ($output.TrimEnd(',')) -ForegroundColor Green
+        }
+    }
+
+    # Cleanup: Remove empty subfolders
+    foreach ($destinationFolder in $destinationFolders) {
+        # Get all year folders in the destination folder
+        $yearFolders = Get-ChildItem -Path $destinationFolder -Directory
+
+        # Loop through each year folder
+        foreach ($yearFolder in $yearFolders) {
+            # Loop through each month folder in the year folder
+            $monthFolders = Get-ChildItem -Path $yearFolder.FullName -Directory
+            foreach ($monthFolder in $monthFolders) {
+                # Construct the user folder path based on the folder name
+                $userFolderPath = Join-Path -Path $monthFolder.FullName -ChildPath $folderName
+
+                if (Test-Path -Path $userFolderPath -PathType Container) {
+                    # List of subfolders to check
+                    $subFoldersToCheck = @("RAW", "JPEG", "Video", "Others", "PNG")
+
+                    # Loop through each subfolder and delete if empty
+                    foreach ($subFolder in $subFoldersToCheck) {
+                        $subFolderPath = Join-Path -Path $userFolderPath -ChildPath $subFolder
+                        if (Test-Path -Path $subFolderPath -PathType Container) {
+                            # Check if the subfolder is empty
+                            if ((Get-ChildItem -Path $subFolderPath -File -Recurse -Force | Measure-Object).Count -eq 0) {
+                                Remove-Item -Path $subFolderPath -Recurse -Force
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
