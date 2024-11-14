@@ -39,21 +39,34 @@ This example shows how to run the script.
 GitHub : https://github.com/Gorfort/PhotoSorter-PowerShell
 
 #>
+# Function to simulate typing effect
+function Write-Typing {
+    param (
+        [string]$text,
+        [int]$delay = 20,
+        [string]$color = "White"
+    )
+    foreach ($char in $text.ToCharArray()) {
+        Write-Host -NoNewline -ForegroundColor $color $char
+        Start-Sleep -Milliseconds $delay
+    }
+    Write-Host
+}
 
-Write-Host "Welcome to the Files Sorter" -ForegroundColor Blue
+Write-Typing "Welcome to the Files Sorter" -delay 20 -color "Cyan"
 
-# Specify the folder name directly
-$folderName = "Photos"
-
-# Function to prompt the user for a folder path and handle invalid input
+# Function to get folder path from user
 function Get-FolderPath {
     param (
         [string]$prompt
     )
     do {
-        $folderPath = Read-Host -Prompt $prompt
-        if (-not (Test-Path $folderPath -PathType Container)) {
-            Write-Host "Invalid folder path. Please try again." -ForegroundColor Red
+        Write-Typing $prompt -delay 40 -color "Yellow"
+        $folderPath = Read-Host
+        
+        # Check if the input is empty or the folder path does not exist
+        if (-not $folderPath -or -not (Test-Path $folderPath -PathType Container)) {
+            Write-Typing "Invalid input. Please enter a valid folder path." -delay 20 -color "Red"
         } else {
             break
         }
@@ -65,16 +78,17 @@ function Get-FolderPath {
 # Function to ask the user if they want to run the script again
 function AskRunAgain {
     do {
-        $choice = Read-Host "Do you want to run the script again? (Y/N)"
+        Write-Typing "Do you want to run the script again? (Y/N)" -delay 20 -color "Yellow"
+        $choice = Read-Host
         if ($choice -eq 'Y' -or $choice -eq 'N') {
             return $choice
         } else {
-            Write-Host "Invalid choice. Please enter Y or N." -ForegroundColor Red
+            Write-Typing "Invalid choice. Please enter Y or N." -delay 20 -color "Red"
         }
     } while ($true)
 }
 
-# Function to prompt the user for multiple destination folders
+# Function to ask the user if they want to add another folder
 function Get-DestinationFolders {
     $destinations = @()
 
@@ -84,20 +98,24 @@ function Get-DestinationFolders {
 
     # Ask if the user wants to add more folders
     do {
-        $addAnother = Read-Host "Do you want to save the files in an additional folder? (Y/N)"
+        Write-Typing "Do you want to save the files in an additional folder? (Y/N)" -delay 20 -color "Yellow"
+        $addAnother = Read-Host
         
         if ($addAnother -match '^(Y|y)$') {
-            $nextDest = Get-FolderPath -prompt "Enter the additional destination folder path"
+            $nextDest = Get-FolderPath -prompt "Enter the additional destination folder path" -delay 20 -color "Yellow"
             $destinations += $nextDest
         } elseif ($addAnother -match '^(N|n)$') {
-            break  # Exit the loop if "N" or "n" is entered
+            break
         } else {
-            Write-Host "Invalid input. Please enter Y or N." -ForegroundColor Red
+            Write-Typing "Invalid input. Please enter Y or N." -delay 20 -color "Red"
         }
     } while ($true)
 
     return $destinations
 }
+
+# Main script execution (rest of your script continues here...)
+
 
 # Initialize a hash table to track files by month and category
 $fileCounts = @{}
@@ -108,6 +126,9 @@ $uniqueFilesProcessed = @()
 do {
     $sourceFolder = Get-FolderPath -prompt "Enter the source folder path"
     $destinationFolders = Get-DestinationFolders
+
+    # Start timer
+    $startTime = Get-Date
 
     # Get all the photos from the source folder (excluding subdirectories)
     $photos = Get-ChildItem -Path $sourceFolder -File
@@ -184,16 +205,15 @@ do {
                     $fileType = "Others"
                 }
 
-                # Copy the file if it doesn't already exist in the destination
-                if (-not (Test-Path $destinationPath)) {
-                    Copy-Item $photo.FullName $destinationPath -ErrorAction SilentlyContinue
+                # Copy the file if it does not already exist at the destination
+                if (-not (Test-Path -Path $destinationPath)) {
+                    Copy-Item -Path $photo.FullName -Destination $destinationPath
+                    $processedFiles++
                 }
             }
 
-            # Increment the unique file count after processing all destination folders
-            $processedFiles++
-            # Add the file name to the unique files array
-            $uniqueFilesProcessed += $photo.Name  # Add the file name to the unique files array
+            # Update processed files list and percentage
+            $uniqueFilesProcessed += $photo.Name
             $percentComplete = [math]::floor(($processedFiles / $totalFiles) * 100)
             Write-Progress -Activity "Copying Files" -PercentComplete $percentComplete -Status "$processedFiles/$totalFiles files copied - $percentComplete% complete"
 
@@ -205,56 +225,45 @@ do {
                 }
             }
             $fileCounts[$monthKey][$fileType]++
-
         } catch {
-            Write-Host "Error processing $($photo.Name): $_" -ForegroundColor Yellow
+            Write-Typing "Error processing $($photo.Name): $_" -delay 20 -color "Red"
         }
     }
 
-    # Final message for completion
-    Write-Host "All photos have been copied successfully." -ForegroundColor Green
+    # Clear the progress bar after copying is complete
+    Write-Progress -Activity " " -Status " " -Completed
 
-    # Display summary of file counts per month
-    Write-Host "`nSummary of files moved:" -ForegroundColor Cyan
-    foreach ($month in $fileCounts.Keys) {
-        $counts = $fileCounts[$month]
-        $output = "$month :"
+    # Display file summary after processing
+    Write-Typing "Processing complete. Files summary:" -delay 20 -color "Cyan"
+    $fileCounts.GetEnumerator() | ForEach-Object {
+        $monthKey = $_.Key
+        $counts = $_.Value
+        $output = "$monthKey -"
 
-        # Build the output string by including only non-zero file types
-        foreach ($fileType in $counts.Keys) {
-            if ($counts[$fileType] -gt 0) {
-                $output += " $($counts[$fileType]) $fileType files,"
-            }
-        }
+        # Build the output by including only counts greater than 0
+        $output += ($counts.Keys | Where-Object { $counts[$_] -gt 0 } | ForEach-Object { "$_ : $($counts[$_])" }) -join ", "
 
-        # Remove trailing comma and display the result if there’s any file type to show
-        if ($output -ne "$month :") {
-            Write-Host ($output.TrimEnd(',')) -ForegroundColor Green
-        }
+        Write-Typing $output -delay 40 -color "Green"
     }
+
+    # Calculate the time taken and display
+    $endTime = Get-Date
+    $duration = $endTime - $startTime
+    Write-Typing "Time taken: $($duration.Hours)h $($duration.Minutes)m $($duration.Seconds)s" -delay 20 -color "Magenta"
 
     # Cleanup: Remove empty subfolders
     foreach ($destinationFolder in $destinationFolders) {
-        # Get all year folders in the destination folder
         $yearFolders = Get-ChildItem -Path $destinationFolder -Directory
 
-        # Loop through each year folder
         foreach ($yearFolder in $yearFolders) {
-            # Loop through each month folder in the year folder
             $monthFolders = Get-ChildItem -Path $yearFolder.FullName -Directory
             foreach ($monthFolder in $monthFolders) {
-                # Construct the user folder path based on the folder name
                 $userFolderPath = Join-Path -Path $monthFolder.FullName -ChildPath $folderName
-
                 if (Test-Path -Path $userFolderPath -PathType Container) {
-                    # List of subfolders to check
                     $subFoldersToCheck = @("RAW", "JPEG", "Video", "Others", "PNG")
-
-                    # Loop through each subfolder and delete if empty
                     foreach ($subFolder in $subFoldersToCheck) {
                         $subFolderPath = Join-Path -Path $userFolderPath -ChildPath $subFolder
                         if (Test-Path -Path $subFolderPath -PathType Container) {
-                            # Check if the subfolder is empty
                             if ((Get-ChildItem -Path $subFolderPath -File -Recurse -Force | Measure-Object).Count -eq 0) {
                                 Remove-Item -Path $subFolderPath -Recurse -Force
                             }
@@ -264,11 +273,6 @@ do {
             }
         }
     }
-    $runAgain = AskRunAgain
 
-} while ($runAgain -eq 'Y')
-
-if ($runAgain -eq 'N') {
-    Write-Host "Goodbye!" -ForegroundColor Green
-}
-
+    $runAgainChoice = AskRunAgain
+} while ($runAgainChoice -eq 'Y')
