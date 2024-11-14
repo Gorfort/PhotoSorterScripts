@@ -3,7 +3,7 @@
 .NOTES
 File Name            : FilesGatherer.ps1
 Requirements         : PowerShell 7.4.0
-Script version       : 1.0.0
+Script version       : 1.0.3
 Author               : Thibaud Racine
 Creation date        : 04.11.24
 Location             : ETML Lausanne, Switzerland
@@ -39,7 +39,22 @@ GitHub : https://github.com/Gorfort/PhotoSorter-PowerShell
 
 #>
 
-Write-Host "Welcome to the Files Gatherer" -ForegroundColor Blue
+# Helper function to simulate typing effect with color
+function Write-TypingEffect {
+    param (
+        [string]$text,
+        [int]$delay = 50,            # Adjust delay (milliseconds) for typing speed
+        [ConsoleColor]$color = "White" # Default color set to White
+    )
+    foreach ($char in $text.ToCharArray()) {
+        Write-Host -NoNewline $char -ForegroundColor $color
+        Start-Sleep -Milliseconds $delay
+    }
+    Write-Host ""
+}
+
+# Intro message with blue color
+Write-TypingEffect "Welcome to the Files Gatherer" -delay 40 -color "Cyan"
 
 # Function to prompt the user for a folder path and handle invalid input
 function Get-FolderPath {
@@ -47,9 +62,10 @@ function Get-FolderPath {
         [string]$prompt
     )
     do {
-        $folderPath = Read-Host -Prompt $prompt
+        Write-TypingEffect $prompt -delay 40 -color "Yellow"
+        $folderPath = Read-Host
         if (-not (Test-Path $folderPath -PathType Container)) {
-            Write-Host "Invalid folder path. Please try again." -ForegroundColor Red
+            Write-TypingEffect "Invalid folder path. Please try again." -delay 40 -color "Red"
         } else {
             break
         }
@@ -61,25 +77,29 @@ function Get-FolderPath {
 # Function to ask the user if they want to run the script again
 function AskRunAgain {
     do {
-        $choice = Read-Host "Do you want to run the script again? (Y/N)"
+        Write-TypingEffect "Do you want to run the script again? (Y/N)" -delay 40 -color "Yellow"
+        $choice = Read-Host
         if ($choice -eq 'Y' -or $choice -eq 'N') {
             return $choice
         } else {
-            Write-Host "Invalid choice. Please enter Y or N." -ForegroundColor Red
+            Write-TypingEffect "Invalid choice. Please enter Y or N." -delay 40 -color "Red"
         }
     } while ($true)
 }
 
 # Main script execution loop
 do {
-    $sourceFolder = Get-FolderPath -prompt "Enter the source folder path"
-    $destinationFolder = Get-FolderPath -prompt "Enter the destination folder path"
+    $sourceFolder = Get-FolderPath -prompt "Enter the source folder path :"
+    $destinationFolder = Get-FolderPath -prompt "Enter the destination folder path :"
 
     # Get all files from the source folder (including subdirectories)
     $files = Get-ChildItem -Path $sourceFolder -File -Recurse
     $totalFiles = $files.Count
     $processedFiles = 0
     $uniqueSourceFolders = @{}
+
+    # Record the start time
+    $startTime = Get-Date
 
     foreach ($file in $files) {
         try {
@@ -94,7 +114,7 @@ do {
                 # Track the unique source folder
                 $uniqueSourceFolders[$file.DirectoryName] = $true
             } else {
-                Write-Host "File $($file.Name) already exists in the destination. Skipping." -ForegroundColor Yellow
+                Write-TypingEffect "File $($file.Name) already exists in the destination. Skipping." -delay 30 -color "Yellow"
             }
 
             # Update progress
@@ -102,21 +122,29 @@ do {
             Write-Progress -Activity "Copying Files" -PercentComplete $percentComplete -Status "$processedFiles/$totalFiles files copied - $percentComplete% complete"
 
         } catch {
-            Write-Host "Error processing $($file.Name): $_" -ForegroundColor Red
+            Write-TypingEffect "Error processing $($file.Name): $_" -delay 30 -color "Red"
         }
     }
 
-    # Final message for completion
-    Write-Host "All files have been copied successfully." -ForegroundColor Green
+    # Record the end time and calculate the duration
+    $endTime = Get-Date
+    $duration = $endTime - $startTime
+
+    # Clear the progress bar after copying is complete
+    Write-Progress -Activity " " -Status " " -Completed
+
+    # Final message for completion in green
+    Write-TypingEffect "All files have been copied successfully." -delay 40 -color "Green"
     
-    # Summary of moved files and source folders
+    # Summary of moved files and source folders in cyan, and display the duration
     $sourceFolderCount = $uniqueSourceFolders.Keys.Count
-    Write-Host "$processedFiles files have been moved from $sourceFolderCount folder(s)." -ForegroundColor Cyan
+    Write-TypingEffect "$processedFiles files have been moved from $sourceFolderCount folder(s)." -delay 40 -color "Cyan"
+    Write-TypingEffect "Time taken: $($duration.Hours)h $($duration.Minutes)m $($duration.Seconds)s" -delay 40 -color "Magenta"
 
     $runAgain = AskRunAgain
 
 } while ($runAgain -eq 'Y')
 
 if ($runAgain -eq 'N') {
-    Write-Host "Goodbye!" -ForegroundColor Green
+    Write-TypingEffect "Goodbye!" -delay 40 -color "Green"
 }
