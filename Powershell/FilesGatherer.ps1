@@ -1,4 +1,5 @@
 <#
+
 .NOTES
 File Name            : FilesGatherer.ps1
 Requirements         : PowerShell 7.4.0
@@ -52,9 +53,6 @@ function Write-Typing {
     Write-Host
 }
 
-# Intro message with blue color
-Write-Typing "Welcome to the Files Gatherer" -delay 40 -color "Cyan"
-
 # Function to prompt the user for a folder path and handle invalid input
 function Get-FolderPath {
     param (
@@ -88,6 +86,8 @@ function AskRunAgain {
 
 # Main script execution loop
 do {
+    Write-Typing "Welcome to the Files Gatherer" -delay 40 -color "Cyan"
+    
     $sourceFolder = Get-FolderPath -prompt "Enter the source folder path :"
     $destinationFolder = Get-FolderPath -prompt "Enter the destination folder path :"
 
@@ -96,34 +96,61 @@ do {
     $totalFiles = $files.Count
     $processedFiles = 0
     $uniqueSourceFolders = @{}
+    $totalTimeTaken = [TimeSpan]::Zero  # Variable to track the total time taken
 
-    # Record the start time
-    $startTime = Get-Date
+# Record the start time
+$startTime = Get-Date
+$processedFiles = 0
+$totalFiles = $files.Count
+$totalTimeTaken = [timespan]::Zero
+$uniqueSourceFolders = @{}
 
-    foreach ($file in $files) {
-        try {
-            # Define the destination path
-            $destinationPath = Join-Path -Path $destinationFolder -ChildPath $file.Name
+foreach ($file in $files) {
+    try {
+        # Define the destination path
+        $destinationPath = Join-Path -Path $destinationFolder -ChildPath $file.Name
 
-            # Copy the file if it doesn't already exist in the destination
-            if (-not (Test-Path $destinationPath)) {
-                Copy-Item -Path $file.FullName -Destination $destinationPath -ErrorAction SilentlyContinue
-                $processedFiles++
-                
-                # Track the unique source folder
-                $uniqueSourceFolders[$file.DirectoryName] = $true
-            } else {
-                Write-Typing "File $($file.Name) already exists in the destination. Skipping." -delay 30 -color "Yellow"
-            }
+        # Start time for each file
+        $fileStartTime = Get-Date
 
-            # Update progress
-            $percentComplete = [math]::floor(($processedFiles / $totalFiles) * 100)
-            Write-Progress -Activity "Copying Files" -PercentComplete $percentComplete -Status "$processedFiles/$totalFiles files copied - $percentComplete% complete"
-
-        } catch {
-            Write-Typing "Error processing $($file.Name): $_" -delay 30 -color "Red"
+        # Copy the file if it doesn't already exist in the destination
+        if (-not (Test-Path $destinationPath)) {
+            Copy-Item -Path $file.FullName -Destination $destinationPath -ErrorAction SilentlyContinue
+            $processedFiles++
+            
+            # Track the unique source folder
+            $uniqueSourceFolders[$file.DirectoryName] = $true
+        } else {
+            Write-Typing "File $($file.Name) already exists in the destination. Skipping." -delay 30 -color "Yellow"
         }
+
+        # Track the time taken for this file
+        $fileEndTime = Get-Date
+        $timeTakenForFile = $fileEndTime - $fileStartTime
+        $totalTimeTaken += $timeTakenForFile
+
+        # Calculate estimated time left
+        if ($processedFiles -gt 0) {
+            $averageTimePerFile = $totalTimeTaken.TotalSeconds / $processedFiles
+            $remainingFiles = $totalFiles - $processedFiles
+            $estimatedTimeLeft = $averageTimePerFile * $remainingFiles
+
+            # Format the estimated time left
+            $estimatedTimeLeftFormatted = [TimeSpan]::FromSeconds($estimatedTimeLeft)
+            $timeLeftString = "{0:D2}:{1:D2}:{2:D2}" -f $estimatedTimeLeftFormatted.Hours, $estimatedTimeLeftFormatted.Minutes, $estimatedTimeLeftFormatted.Seconds
+        } else {
+            $timeLeftString = "Calculating..."
+        }
+
+        # Update progress
+        $percentComplete = [math]::floor(($processedFiles / $totalFiles) * 100)
+        Write-Progress -Activity "Copying Files" -PercentComplete $percentComplete -Status "$processedFiles/$totalFiles files copied - $percentComplete% complete."
+
+    } catch {
+        Write-Typing "Error processing $($file.Name): $_" -delay 30 -color "Red"
     }
+}
+
 
     # Record the end time and calculate the duration
     $endTime = Get-Date
