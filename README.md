@@ -19,8 +19,10 @@ This PowerShell script automates the organization and copying of files from a so
 3. Run the script using:
    ```powershell
    .\FilesSorter.ps1
-
-
+   ```
+   or
+   ```powershell
+   .\FilesGatherer.ps1
+   ```
 ## In Progress / To do
 - bash version of the script
-- Counter that shows how long it took to copy the files
