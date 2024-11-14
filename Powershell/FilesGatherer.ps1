@@ -1,5 +1,4 @@
 <#
-
 .NOTES
 File Name            : FilesGatherer.ps1
 Requirements         : PowerShell 7.4.0
@@ -54,7 +53,7 @@ function Write-Typing {
 }
 
 # Intro message with blue color
-Write-TypingEffect "Welcome to the Files Gatherer" -delay 40 -color "Cyan"
+Write-Typing "Welcome to the Files Gatherer" -delay 40 -color "Cyan"
 
 # Function to prompt the user for a folder path and handle invalid input
 function Get-FolderPath {
@@ -62,10 +61,10 @@ function Get-FolderPath {
         [string]$prompt
     )
     do {
-        Write-TypingEffect $prompt -delay 40 -color "Yellow"
+        Write-Typing $prompt -delay 40 -color "Yellow"
         $folderPath = Read-Host
         if (-not (Test-Path $folderPath -PathType Container)) {
-            Write-TypingEffect "Invalid folder path. Please try again." -delay 40 -color "Red"
+            Write-Typing "Invalid folder path. Please try again." -delay 40 -color "Red"
         } else {
             break
         }
@@ -77,12 +76,12 @@ function Get-FolderPath {
 # Function to ask the user if they want to run the script again
 function AskRunAgain {
     do {
-        Write-TypingEffect "Do you want to run the script again? (Y/N)" -delay 40 -color "Yellow"
+        Write-Typing "Do you want to run the script again? (Y/N)" -delay 40 -color "Yellow"
         $choice = Read-Host
         if ($choice -eq 'Y' -or $choice -eq 'N') {
             return $choice
         } else {
-            Write-TypingEffect "Invalid choice. Please enter Y or N." -delay 40 -color "Red"
+            Write-Typing "Invalid choice. Please enter Y or N." -delay 40 -color "Red"
         }
     } while ($true)
 }
@@ -114,7 +113,7 @@ do {
                 # Track the unique source folder
                 $uniqueSourceFolders[$file.DirectoryName] = $true
             } else {
-                Write-TypingEffect "File $($file.Name) already exists in the destination. Skipping." -delay 30 -color "Yellow"
+                Write-Typing "File $($file.Name) already exists in the destination. Skipping." -delay 30 -color "Yellow"
             }
 
             # Update progress
@@ -122,7 +121,7 @@ do {
             Write-Progress -Activity "Copying Files" -PercentComplete $percentComplete -Status "$processedFiles/$totalFiles files copied - $percentComplete% complete"
 
         } catch {
-            Write-TypingEffect "Error processing $($file.Name): $_" -delay 30 -color "Red"
+            Write-Typing "Error processing $($file.Name): $_" -delay 30 -color "Red"
         }
     }
 
@@ -134,17 +133,17 @@ do {
     Write-Progress -Activity " " -Status " " -Completed
 
     # Final message for completion in green
-    Write-TypingEffect "All files have been copied successfully." -delay 40 -color "Green"
+    Write-Typing "All files have been copied successfully." -delay 40 -color "Green"
     
     # Summary of moved files and source folders in cyan, and display the duration
     $sourceFolderCount = $uniqueSourceFolders.Keys.Count
-    Write-TypingEffect "$processedFiles files have been moved from $sourceFolderCount folder(s)." -delay 40 -color "Cyan"
-    Write-TypingEffect "Time taken: $($duration.Hours)h $($duration.Minutes)m $($duration.Seconds)s" -delay 40 -color "Magenta"
+    Write-Typing "$processedFiles files have been moved from $sourceFolderCount folder(s)." -delay 40 -color "Cyan"
+    Write-Typing "Time taken: $($duration.Hours)h $($duration.Minutes)m $($duration.Seconds)s" -delay 40 -color "Magenta"
 
     $runAgain = AskRunAgain
 
 } while ($runAgain -eq 'Y')
 
 if ($runAgain -eq 'N') {
-    Write-TypingEffect "Goodbye!" -delay 40 -color "Green"
+    Write-Typing "Goodbye!" -delay 40 -color "Green"
 }
