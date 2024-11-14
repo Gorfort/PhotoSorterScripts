@@ -40,17 +40,17 @@ GitHub : https://github.com/Gorfort/PhotoSorter-PowerShell
 #>
 
 # Helper function to simulate typing effect with color
-function Write-TypingEffect {
+function Write-Typing {
     param (
         [string]$text,
-        [int]$delay = 50,            # Adjust delay (milliseconds) for typing speed
-        [ConsoleColor]$color = "White" # Default color set to White
+        [int]$delay = 50,
+        [string]$color = "White"
     )
     foreach ($char in $text.ToCharArray()) {
-        Write-Host -NoNewline $char -ForegroundColor $color
+        Write-Host -NoNewline -ForegroundColor $color $char
         Start-Sleep -Milliseconds $delay
     }
-    Write-Host ""
+    Write-Host
 }
 
 # Intro message with blue color
