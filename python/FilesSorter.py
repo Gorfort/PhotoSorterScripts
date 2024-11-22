@@ -114,12 +114,14 @@ def organize_photos(source_folder, destination_folders):
                         "RAW": ['.cr3', '.raw', '.dng'],
                         "JPEG": ['.jpg', '.jpeg'],
                         "PNG": ['.png'],
-                        "Video": ['.mp4', '.mov', '.crm', '.mxf']
+                        "Video": ['.mp4', '.mov', '.crm', '.mxf'],
                     }
 
-                    # Assign to the correct category (ignores "Others" folder)
+                    # Track if the file was successfully placed into one of the categories
                     file_moved = False
                     extension = photo.name.split('.')[-1].lower()
+
+                    # First, check for known categories
                     for category, extensions in subfolders.items():
                         if f".{extension}" in extensions:
                             category_folder = month_folder / category
@@ -135,10 +137,25 @@ def organize_photos(source_folder, destination_folders):
                             if f"{current_month} {current_year}" not in file_counts:
                                 file_counts[f"{current_month} {current_year}"] = {cat: 0 for cat in subfolders}
                             file_counts[f"{current_month} {current_year}"][category] += 1
+                            break  # Break once the file is placed in a valid category
 
-                    # If the file was not moved to any category, it's ignored (not moved to "Others")
+                    # If the file didn't match any known category, move it to "Others"
                     if not file_moved:
-                        continue
+                        # Create "Others" folder if it doesn't exist
+                        others_folder = month_folder / "Others"
+                        if not others_folder.exists():
+                            others_folder.mkdir(parents=True, exist_ok=True)
+
+                        # Move the unsupported file to the "Others" folder
+                        dest_path = others_folder / photo.name
+                        if not dest_path.exists():
+                            shutil.copy2(photo.path, dest_path)
+                            processed_files += 1
+
+                        # Update the count for "Others"
+                        if f"{current_month} {current_year}" not in file_counts:
+                            file_counts[f"{current_month} {current_year}"] = {cat: 0 for cat in subfolders}
+                        file_counts[f"{current_month} {current_year}"]["Others"] = file_counts[f"{current_month} {current_year}"].get("Others", 0) + 1
 
                 unique_files_processed.add(photo.name)
 
