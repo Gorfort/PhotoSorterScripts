@@ -3,18 +3,11 @@ import sys
 import os
 import shutil
 import time
+from tqdm import tqdm  
 
 # Function to install missing packages
 def install_package(package):
     subprocess.check_call([sys.executable, "-m", "pip", "install", package])
-
-# Try importing tqdm, and install it if not found
-try:
-    from tqdm import tqdm
-except ImportError:
-    print("tqdm module not found. Installing it now...")
-    install_package('tqdm')
-    from tqdm import tqdm
 
 # Function to simulate typing effect with color
 def write_typing(text, delay=0.05, color="white"):
@@ -68,21 +61,26 @@ def main():
         # Record start time
         start_time = time.time()
 
-        # Iterate over all files
-        for file in tqdm(files, desc="Copying files", unit="file"):
-            try:
-                # Define the destination path
-                destination_path = os.path.join(destination_folder, os.path.basename(file))
+        # Use tqdm to show progress
+        with tqdm(total=total_files, desc="Copying files", unit="file") as pbar:
+            # Iterate over all files
+            for file in files:
+                try:
+                    # Define the destination path
+                    destination_path = os.path.join(destination_folder, os.path.basename(file))
 
-                # Copy file if it doesn't exist in the destination
-                if not os.path.exists(destination_path):
-                    shutil.copy(file, destination_path)
-                    processed_files += 1
-                    unique_source_folders.add(os.path.dirname(file))
-                else:
-                    write_typing(f"File {os.path.basename(file)} already exists in the destination. Skipping.", delay=0.04, color="yellow")
-            except Exception as e:
-                write_typing(f"Error processing {os.path.basename(file)}: {str(e)}", delay=0.04, color="red")
+                    # Copy file if it doesn't exist in the destination
+                    if not os.path.exists(destination_path):
+                        shutil.copy(file, destination_path)
+                        processed_files += 1
+                        unique_source_folders.add(os.path.dirname(file))
+                    else:
+                        write_typing(f"File {os.path.basename(file)} already exists in the destination. Skipping.", delay=0.04, color="yellow")
+                
+                    # Update progress bar after processing each file
+                    pbar.update(1)
+                except Exception as e:
+                    write_typing(f"Error processing {os.path.basename(file)}: {str(e)}", delay=0.04, color="red")
 
         # Record end time and calculate duration
         end_time = time.time()
