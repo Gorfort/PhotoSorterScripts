@@ -25,4 +25,4 @@ This PowerShell script automates the organization and copying of files from a so
    .\FilesGatherer.ps1
    ```
 ## In Progress / To do
-- bash version of the script
+- python version of the script
