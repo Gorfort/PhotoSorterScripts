@@ -8,10 +8,27 @@ from PIL.ExifTags import TAGS
 from tqdm import tqdm  # Import tqdm for progress bar
 
 def typing_effect(text, delay=0.02, color=None):
-    """Simulate typing effect."""
+    """Simulate typing effect with optional colors."""
+    # Define ANSI color codes
+    color_codes = {
+        "black": "\033[30m",
+        "red": "\033[31m",
+        "green": "\033[32m",
+        "yellow": "\033[33m",
+        "blue": "\033[34m",
+        "magenta": "\033[35m",
+        "cyan": "\033[36m",
+        "white": "\033[37m",
+        "reset": "\033[0m"
+    }
+
+    # Apply color if specified
+    if color and color in color_codes:
+        text = color_codes[color] + text + color_codes["reset"]
+
     for char in text:
         print(char, end='', flush=True)
-        time.sleep(delay) 
+        time.sleep(delay)
     print()
 
 def get_folder_path(prompt):
@@ -115,15 +132,14 @@ def organize_photos(source_folder, destination_folders):
                         "JPEG": ['.jpg', '.jpeg'],
                         "PNG": ['.png'],
                         "Video": ['.mp4', '.mov', '.crm', '.mxf'],
+                        "Others": []  # For unsupported files
                     }
 
-                    # Track if the file was successfully placed into one of the categories
+                    # Assign to the correct category (ignores "Others" folder)
                     file_moved = False
                     extension = photo.name.split('.')[-1].lower()
-
-                    # First, check for known categories
                     for category, extensions in subfolders.items():
-                        if f".{extension}" in extensions:
+                        if f".{extension}" in extensions or (category == "Others" and f".{extension}" not in sum(list(subfolders.values()), [])):
                             category_folder = month_folder / category
                             if not category_folder.exists():
                                 category_folder.mkdir(parents=True, exist_ok=True)
@@ -137,25 +153,10 @@ def organize_photos(source_folder, destination_folders):
                             if f"{current_month} {current_year}" not in file_counts:
                                 file_counts[f"{current_month} {current_year}"] = {cat: 0 for cat in subfolders}
                             file_counts[f"{current_month} {current_year}"][category] += 1
-                            break  # Break once the file is placed in a valid category
 
-                    # If the file didn't match any known category, move it to "Others"
+                    # If the file was not moved to any category, it's ignored (not moved to "Others")
                     if not file_moved:
-                        # Create "Others" folder if it doesn't exist
-                        others_folder = month_folder / "Others"
-                        if not others_folder.exists():
-                            others_folder.mkdir(parents=True, exist_ok=True)
-
-                        # Move the unsupported file to the "Others" folder
-                        dest_path = others_folder / photo.name
-                        if not dest_path.exists():
-                            shutil.copy2(photo.path, dest_path)
-                            processed_files += 1
-
-                        # Update the count for "Others"
-                        if f"{current_month} {current_year}" not in file_counts:
-                            file_counts[f"{current_month} {current_year}"] = {cat: 0 for cat in subfolders}
-                        file_counts[f"{current_month} {current_year}"]["Others"] = file_counts[f"{current_month} {current_year}"].get("Others", 0) + 1
+                        continue
 
                 unique_files_processed.add(photo.name)
 
@@ -165,8 +166,15 @@ def organize_photos(source_folder, destination_folders):
             # Update progress bar
             pbar.update(1)
 
+    # Calculate the time taken
     duration = datetime.now() - start_time
-    typing_effect(f"Time taken: {duration}", color="magenta")
+    formatted_duration = str(duration).split('.')[0]  # Removes microseconds part
+    hours, minutes, seconds = map(int, formatted_duration.split(':'))
+
+    # Format as hh:mm:ss
+    formatted_time = f"{hours:01}:{minutes:02}:{seconds:02}"
+
+    typing_effect(f"Time taken: {formatted_time}", color="magenta")
 
     # Remove empty folders after processing
     remove_empty_folders(source_folder)
@@ -177,6 +185,7 @@ def organize_photos(source_folder, destination_folders):
 
 # Main execution
 if __name__ == "__main__":
+    typing_effect("Welcome !", color="green")
     run_again = 'Y'
     while run_again == 'Y':
         source_folder = get_folder_path("Enter the source folder path:")
@@ -189,3 +198,5 @@ if __name__ == "__main__":
             typing_effect(f"{month} - {details}", color="green")
 
         run_again = ask_run_again()
+
+    typing_effect("Goodbye !", color="green")
