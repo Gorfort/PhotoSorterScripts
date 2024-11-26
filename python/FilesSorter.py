@@ -5,6 +5,15 @@ from datetime import datetime
 from pathlib import Path
 from PIL import Image
 from PIL.ExifTags import TAGS
+import subprocess
+import sys
+
+# Ensure tqdm is installed
+try:
+    from tqdm import tqdm
+except ImportError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "tqdm"])
+    from tqdm import tqdm
 
 def typing_effect(text, delay=0.02, color=None):
     """Simulate typing effect."""
@@ -74,74 +83,79 @@ def organize_photos(source_folder, destination_folders):
 
     start_time = datetime.now()
 
-    for photo in photos:
-        try:
-            if photo.name in unique_files_processed:
-                continue
-
-            # Get the date taken
-            date_taken = None
-            if photo.name.lower().endswith(('.jpg', '.jpeg')):
-                try:
-                    image = Image.open(photo.path)
-                    exif_data = image._getexif()
-                    if exif_data:
-                        for tag, value in exif_data.items():
-                            if TAGS.get(tag, tag) == 'DateTimeOriginal':
-                                date_taken = datetime.strptime(value, '%Y:%m:%d %H:%M:%S')
-                                break
-                except:
-                    pass
-
-            if not date_taken:
-                date_taken = datetime.fromtimestamp(photo.stat().st_mtime)
-
-            current_month = date_taken.strftime("%B")
-            current_year = date_taken.strftime("%Y")
-
-            # Organize by destination folders
-            for destination_folder in destination_folders:
-                year_folder = Path(destination_folder) / current_year
-                month_folder = year_folder / f"{current_month} {current_year}"
-
-                if not month_folder.exists():
-                    month_folder.mkdir(parents=True, exist_ok=True)
-
-                # Subfolders for file types
-                subfolders = {
-                    "RAW": ['.cr3', '.raw', '.dng'],
-                    "JPEG": ['.jpg', '.jpeg'],
-                    "PNG": ['.png'],
-                    "Video": ['.mp4', '.mov', '.crm', '.mxf']
-                }
-
-                # Assign to the correct category (ignores "Others" folder)
-                file_moved = False
-                extension = photo.name.split('.')[-1].lower()
-                for category, extensions in subfolders.items():
-                    if f".{extension}" in extensions:
-                        category_folder = month_folder / category
-                        if not category_folder.exists():
-                            category_folder.mkdir(parents=True, exist_ok=True)
-
-                        dest_path = category_folder / photo.name
-                        if not dest_path.exists():
-                            shutil.copy2(photo.path, dest_path)
-                            processed_files += 1
-                            file_moved = True
-
-                        if f"{current_month} {current_year}" not in file_counts:
-                            file_counts[f"{current_month} {current_year}"] = {cat: 0 for cat in subfolders}
-                        file_counts[f"{current_month} {current_year}"][category] += 1
-
-                # If the file was not moved to any category, it's ignored (not moved to "Others")
-                if not file_moved:
+    # Initialize the progress bar for copying files
+    with tqdm(total=total_files, desc="Copying files", unit="file", ncols=100) as pbar:
+        for photo in photos:
+            try:
+                if photo.name in unique_files_processed:
                     continue
 
-            unique_files_processed.add(photo.name)
+                # Get the date taken
+                date_taken = None
+                if photo.name.lower().endswith(('.jpg', '.jpeg')):
+                    try:
+                        image = Image.open(photo.path)
+                        exif_data = image._getexif()
+                        if exif_data:
+                            for tag, value in exif_data.items():
+                                if TAGS.get(tag, tag) == 'DateTimeOriginal':
+                                    date_taken = datetime.strptime(value, '%Y:%m:%d %H:%M:%S')
+                                    break
+                    except:
+                        pass
 
-        except Exception as e:
-            typing_effect(f"Error processing {photo.name}: {e}", color="red")
+                if not date_taken:
+                    date_taken = datetime.fromtimestamp(photo.stat().st_mtime)
+
+                current_month = date_taken.strftime("%B")
+                current_year = date_taken.strftime("%Y")
+
+                # Organize by destination folders
+                for destination_folder in destination_folders:
+                    year_folder = Path(destination_folder) / current_year
+                    month_folder = year_folder / f"{current_month} {current_year}"
+
+                    if not month_folder.exists():
+                        month_folder.mkdir(parents=True, exist_ok=True)
+
+                    # Subfolders for file types
+                    subfolders = {
+                        "RAW": ['.cr3', '.raw', '.dng'],
+                        "JPEG": ['.jpg', '.jpeg'],
+                        "PNG": ['.png'],
+                        "Video": ['.mp4', '.mov', '.crm', '.mxf']
+                    }
+
+                    # Assign to the correct category (ignores "Others" folder)
+                    file_moved = False
+                    extension = photo.name.split('.')[-1].lower()
+                    for category, extensions in subfolders.items():
+                        if f".{extension}" in extensions:
+                            category_folder = month_folder / category
+                            if not category_folder.exists():
+                                category_folder.mkdir(parents=True, exist_ok=True)
+
+                            dest_path = category_folder / photo.name
+                            if not dest_path.exists():
+                                shutil.copy2(photo.path, dest_path)
+                                processed_files += 1
+                                file_moved = True
+                                
+                                # Update progress bar after each file is copied
+                                pbar.update(1)
+
+                            if f"{current_month} {current_year}" not in file_counts:
+                                file_counts[f"{current_month} {current_year}"] = {cat: 0 for cat in subfolders}
+                            file_counts[f"{current_month} {current_year}"][category] += 1
+
+                    # If the file was not moved to any category, it's ignored (not moved to "Others")
+                    if not file_moved:
+                        continue
+
+                unique_files_processed.add(photo.name)
+
+            except Exception as e:
+                typing_effect(f"Error processing {photo.name}: {e}", color="red")
 
     duration = datetime.now() - start_time
     typing_effect(f"Time taken: {duration}", color="magenta")
