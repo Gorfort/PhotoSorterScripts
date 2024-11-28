@@ -33,6 +33,3 @@ Those scripts automates the organization and copying of files from a source fold
    ```python
    python3 FilesGatherer.py
    ```
-
-## In Progress / To do
-- python version of the script
