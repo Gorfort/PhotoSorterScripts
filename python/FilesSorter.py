@@ -1,12 +1,12 @@
 import os
 import shutil
-import time 
 from datetime import datetime
 from pathlib import Path
-from PIL import Image
-from PIL.ExifTags import TAGS
-from tqdm import tqdm  # Import tqdm for progress bar
+import subprocess
+import sys
+import time
 
+# Typing effect function to display text with delay
 def typing_effect(text, delay=0.02, color=None):
     """Simulate typing effect with optional colors."""
     # Define ANSI color codes
@@ -30,6 +30,36 @@ def typing_effect(text, delay=0.02, color=None):
         print(char, end='', flush=True)
         time.sleep(delay)
     print()
+
+# Automatically install required modules
+def install_packages():
+    required_packages = ['Pillow', 'tqdm']
+    try:
+        # Show the "Updating packages" message with typing effect and blue color
+        typing_effect("Updating packages...", delay=0.04, color="blue")
+        
+        for package in required_packages:
+            subprocess.check_call(
+                [sys.executable, "-m", "pip", "install", package],
+                stdout=subprocess.DEVNULL,  # Suppress standard output
+                stderr=subprocess.DEVNULL   # Suppress error output
+            )
+
+        # Make the "Updating packages..." message disappear
+        print('\r' + ' ' * 20 + '\r', end='', flush=True)  # Clear the line
+    except Exception as e:
+        print(f"\nFailed to install packages: {e}")
+        sys.exit(1)
+
+# Call install_packages at the start
+install_packages()
+
+# Import remaining modules
+from PIL import Image
+from PIL.ExifTags import TAGS
+from tqdm import tqdm  # Import tqdm for progress bar
+
+# The rest of your functions (get_folder_path, ask_run_again, etc.) remain the same
 
 def get_folder_path(prompt):
     """Prompt user for a valid folder path."""
