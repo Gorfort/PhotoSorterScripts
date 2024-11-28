@@ -59,12 +59,10 @@ from PIL import Image
 from PIL.ExifTags import TAGS
 from tqdm import tqdm  # Import tqdm for progress bar
 
-# The rest of your functions (get_folder_path, ask_run_again, etc.) remain the same
-
-def get_folder_path(prompt):
+def get_folder_path(prompt, color="yellow"):
     """Prompt user for a valid folder path."""
     while True:
-        typing_effect(prompt, delay=0.04)
+        typing_effect(prompt, delay=0.04, color=color)  # Yellow color here
         folder_path = input()
         if folder_path and os.path.isdir(folder_path):
             return folder_path
@@ -84,14 +82,14 @@ def ask_run_again():
 def get_destination_folders():
     """Prompt user for destination folders."""
     destinations = []
-    first_dest = get_folder_path("Enter the primary destination folder path:")
+    first_dest = get_folder_path("Enter the primary destination folder path:", color="yellow")  # Yellow color here
     destinations.append(first_dest)
 
     while True:
-        typing_effect("Do you want to save the files in an additional folder? (Y/N)", delay=0.02)
+        typing_effect("Do you want to save the files in an additional folder? (Y/N)", delay=0.02, color="yellow")
         add_another = input().strip().upper()
         if add_another == 'Y':
-            next_dest = get_folder_path("Enter the additional destination folder path:")
+            next_dest = get_folder_path("Enter the additional destination folder path:", color="yellow")  # Yellow color here
             destinations.append(next_dest)
         elif add_another == 'N':
             break
@@ -215,7 +213,7 @@ def organize_photos(source_folder, destination_folders):
 
 if __name__ == "__main__":
     try:
-        typing_effect("Welcome !", color="green")
+        typing_effect("Welcome to the Files Sorter !", color="green")
         run_again = 'Y'
         while run_again == 'Y':
             source_folder = get_folder_path("Enter the source folder path:")
@@ -229,7 +227,7 @@ if __name__ == "__main__":
 
             run_again = ask_run_again()
 
-        typing_effect("Goodbye !", color="green")
+        typing_effect("Goodbye !", color="cyan")
 
     except KeyboardInterrupt:
         typing_effect("\nScript interrupted by user. Goodbye!", color="red")
