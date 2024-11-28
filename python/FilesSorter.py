@@ -222,8 +222,21 @@ if __name__ == "__main__":
 
             typing_effect("Processing complete. Files summary:", color="cyan")
             for month, counts in file_counts.items():
-                details = ", ".join([f"{key}: {value}" for key, value in counts.items() if value > 0])
-                typing_effect(f"{month} - {details}", color="green")
+                # Start the output for the month with the month name in yellow
+                output = f"\033[33m{month} - "  # Yellow for the month
+
+                # Iterate over counts to build the output string
+                for idx, (key, value) in enumerate(counts.items()):
+                    if value > 0:
+                        # Add category in green and value in white
+                        output += f"\033[32m{key}: \033[37m{value}"  # Category in green, value in white
+
+                        # Add a comma and space after each category-value pair except the last one
+                        if idx < len(counts) - 1:
+                            output += ", "
+
+                # Print the formatted output in one go with the correct colors
+                typing_effect(output, color="white", delay=0.04)
 
             run_again = ask_run_again()
 
