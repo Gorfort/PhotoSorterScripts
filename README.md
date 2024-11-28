@@ -26,31 +26,6 @@ Those scripts automates the organization and copying of files from a source fold
 ## How to use the script with Python
 1. Download or clone this repository.
 2. Open a terminal and navigate to the script directory.
-
-1. **Create a virtual environment:**
-   ```bash
-   python3 -m venv venv
-   ```
-
-2. **Activate the virtual environment:**
-   ```bash
-   source venv/bin/activate
-   ```
-
-3. **Install Pillow inside the virtual environment:**
-   ```bash
-   python3 -m pip install pillow
-   ```
-
-4. **Run your script while the virtual environment is active:**
-   ```bash
-   python3 FilesSorter.py
-   ```
-
-5. **When done, deactivate the virtual environment:**
-   ```bash
-   deactivate
-   ```
 3. Run the script using:
    ```python
    python3 FilesSorter.py
