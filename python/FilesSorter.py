@@ -5,13 +5,14 @@ from pathlib import Path
 import subprocess
 import sys
 import time
+from tqdm import tqdm
 from PIL import Image
 from PIL.ExifTags import TAGS
-from tqdm import tqdm  # Import tqdm for progress bar
 
 # Typing effect function to display text with delay
 def typing_effect(text, delay=0.02, color=None):
     """Simulate typing effect with optional colors."""
+    # Define ANSI color codes
     color_codes = {
         "black": "\033[30m",
         "red": "\033[31m",
@@ -23,8 +24,11 @@ def typing_effect(text, delay=0.02, color=None):
         "white": "\033[37m",
         "reset": "\033[0m"
     }
+
+    # Apply color if specified
     if color and color in color_codes:
         text = color_codes[color] + text + color_codes["reset"]
+
     for char in text:
         print(char, end='', flush=True)
         time.sleep(delay)
@@ -35,9 +39,15 @@ def install_packages():
     required_packages = ['Pillow', 'tqdm']
     try:
         typing_effect("Updating packages...", delay=0.04, color="blue")
+        
         for package in required_packages:
-            subprocess.check_call([sys.executable, "-m", "pip", "install", package], 
-                                  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            subprocess.check_call(
+                [sys.executable, "-m", "pip", "install", package],
+                stdout=subprocess.DEVNULL,  # Suppress standard output
+                stderr=subprocess.DEVNULL   # Suppress error output
+            )
+
+        # Make the "Updating packages..." message disappear
         print('\r' + ' ' * 20 + '\r', end='', flush=True)  # Clear the line
     except Exception as e:
         print(f"\nFailed to install packages: {e}")
@@ -86,31 +96,43 @@ def get_destination_folders():
     return destinations
 
 def remove_empty_folders(folder_path):
-    """Remove empty folders without printing messages."""
+    """Remove empty folders."""
     for dirpath, dirnames, filenames in os.walk(folder_path, topdown=False):
         for dirname in dirnames:
             dir_to_check = os.path.join(dirpath, dirname)
             try:
                 os.rmdir(dir_to_check)
             except OSError:
-                pass  
+                pass
 
 def update_metadata(image_path, author_name):
     """Update metadata of the image with the author's name using ExifTool."""
     try:
-        # Convert Path object to string before using 'lower'
+        # Convert path to string and ensure it's wrapped in quotes (to handle spaces in paths)
         image_path_str = str(image_path)
+        image_path_str = f'"{image_path_str}"'  # Wrap the path in double quotes
 
         # Exclude non-image files like .DS_Store
         if not image_path_str.lower().endswith(('.jpg', '.jpeg', '.png', '.tiff', '.cr3', '.raw', '.dng')):
             return
 
-        # Update the author in the metadata with no backup creation
-        command = ['exiftool', '-overwrite_original', f'-Artist={author_name}', image_path_str]
+        # Provide the full path to ExifTool on Windows
+        exiftool_path = r"C:\path\to\exiftool.exe"  # Update this path if ExifTool isn't in PATH
+        
+        # Ensure the ExifTool path is correctly specified
+        if not os.path.exists(exiftool_path):
+            print(f"ExifTool not found at {exiftool_path}. Please verify the path.")
+            return
+
+        # Build the command for ExifTool
+        command = [exiftool_path, '-overwrite_original', f'-Artist={author_name}', image_path_str]
+        
+        # Run the ExifTool command to update the metadata
         subprocess.run(command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        print(f"Metadata updated for {image_path_str}")
+
     except Exception as e:
-        # Log the error for metadata update failure, excluding normal image processing errors
-        typing_effect(f"Error updating metadata for {image_path}: {e}", color="red")
+        print(f"Error updating metadata for {image_path}: {e}")
 
 def organize_photos(source_folder, destination_folders, author_name):
     """Organize and copy photos with progress bar."""
@@ -123,15 +145,16 @@ def organize_photos(source_folder, destination_folders, author_name):
 
     start_time = datetime.now()
 
+    # Use tqdm to show progress
     with tqdm(total=total_files, desc="Processing photos", unit="file") as pbar:
-        for photo in photos:
+        for idx, photo in enumerate(photos):
             try:
                 if photo.name in unique_files_processed:
                     continue
 
                 # Get the date taken
                 date_taken = None
-                if photo.name.lower().endswith(('.jpg', '.jpeg', '.png', '.tiff')):
+                if photo.name.lower().endswith(('.jpg', '.jpeg')):
                     try:
                         image = Image.open(photo.path)
                         exif_data = image._getexif()
@@ -157,18 +180,20 @@ def organize_photos(source_folder, destination_folders, author_name):
                     if not month_folder.exists():
                         month_folder.mkdir(parents=True, exist_ok=True)
 
+                    # Subfolders for file types
                     subfolders = {
                         "RAW": ['.cr3', '.raw', '.dng'],
                         "JPEG": ['.jpg', '.jpeg'],
                         "PNG": ['.png'],
                         "Video": ['.mp4', '.mov', '.crm', '.mxf'],
-                        "Others": []
+                        "Others": []  # For unsupported files
                     }
 
+                    # Assign to the correct category
                     file_moved = False
-                    extension = Path(photo.name).suffix.lower()
+                    extension = photo.name.split('.')[-1].lower()
                     for category, extensions in subfolders.items():
-                        if extension in extensions or (category == "Others" and extension not in sum(list(subfolders.values()), [])):
+                        if f".{extension}" in extensions or (category == "Others" and f".{extension}" not in sum(list(subfolders.values()), [])):
                             category_folder = month_folder / category
                             if not category_folder.exists():
                                 category_folder.mkdir(parents=True, exist_ok=True)
@@ -183,21 +208,34 @@ def organize_photos(source_folder, destination_folders, author_name):
                                 file_counts[f"{current_month} {current_year}"] = {cat: 0 for cat in subfolders}
                             file_counts[f"{current_month} {current_year}"][category] += 1
 
-                    if file_moved:
-                        # Update metadata for the moved file (skip non-image files)
-                        update_metadata(dest_path, author_name)
+                            # Update metadata after moving the file
+                            update_metadata(dest_path, author_name)
+
+                    if not file_moved:
+                        continue
 
                 unique_files_processed.add(photo.name)
 
             except Exception as e:
                 typing_effect(f"Error processing {photo.name}: {e}", color="red")
 
+            # Update progress bar color based on progress
+            progress_percentage = (idx + 1) / total_files * 100
+            if progress_percentage < 33:
+                pbar.set_postfix_str("\033[31mProcessing...\033[0m")  # Red
+            elif progress_percentage < 66:
+                pbar.set_postfix_str("\033[33mProcessing...\033[0m")  # Yellow
+            else:
+                pbar.set_postfix_str("\033[32mProcessing...\033[0m")  # Green
+
             pbar.update(1)
 
+    # Time taken
     duration = datetime.now() - start_time
-    formatted_duration = str(duration).split('.')[0]  # Removes microseconds part
+    formatted_duration = str(duration).split('.')[0]
     hours, minutes, seconds = map(int, formatted_duration.split(':'))
     formatted_time = f"{hours:01}:{minutes:02}:{seconds:02}"
+
     typing_effect(f"Time taken: {formatted_time}", color="magenta")
 
     remove_empty_folders(source_folder)
@@ -211,8 +249,8 @@ if __name__ == "__main__":
         typing_effect("Welcome to the Files Sorter !", color="green")
         run_again = 'Y'
         while run_again == 'Y':
-            author_name = input("Enter the author's name: ")
             source_folder = get_folder_path("Enter the source folder path:")
+            author_name = input("Enter the author's name for metadata update: ")
             destination_folders = get_destination_folders()
             file_counts = organize_photos(source_folder, destination_folders, author_name)
 
@@ -225,7 +263,6 @@ if __name__ == "__main__":
                         if idx < len(counts) - 1:
                             output += ", "
                 typing_effect(output, color="white", delay=0.04)
-
             run_again = ask_run_again()
 
         typing_effect("Goodbye !", color="cyan")
