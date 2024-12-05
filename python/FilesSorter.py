@@ -8,6 +8,7 @@ import time
 from tqdm import tqdm
 from PIL import Image
 from PIL.ExifTags import TAGS
+import piexif
 
 # Typing effect function to display text with delay
 def typing_effect(text, delay=0.02, color=None):
@@ -36,7 +37,7 @@ def typing_effect(text, delay=0.02, color=None):
 
 # Automatically install required modules
 def install_packages():
-    required_packages = ['Pillow', 'tqdm']
+    required_packages = ['Pillow', 'tqdm', 'piexif']
     try:
         typing_effect("Updating packages...", delay=0.04, color="blue")
         
@@ -95,6 +96,43 @@ def get_destination_folders():
 
     return destinations
 
+def update_metadata(image_path, author_name):
+    """Update metadata of the image with the author's name."""
+    try:
+        # Ensure the path is a string before checking its extension
+        image_path_str = str(image_path).lower()
+
+        # Open the image file
+        img = Image.open(image_path)
+
+        # Handle JPEG and JPG files (using EXIF)
+        if image_path_str.endswith(('jpg', 'jpeg')):
+            exif_dict = piexif.load(img.info.get("exif", b""))
+            # Update author field in EXIF metadata
+            exif_dict['0th'][piexif.ImageIFD.Artist] = author_name.encode()
+            exif_bytes = piexif.dump(exif_dict)
+            img.save(image_path, exif=exif_bytes)
+
+        # Handle PNG files (using text metadata)
+        elif image_path_str.endswith('png'):
+            # PNG metadata can be added as text
+            img.info['Author'] = author_name  # Add author as PNG text
+            img.save(image_path, pnginfo=img.info.get("pnginfo", {}))
+
+        # Handle CR3 files - Currently not updating metadata, but you can process them similarly
+        elif image_path_str.endswith('cr3'):
+            print(f"Processing CR3 file: {image_path}.")
+            # CR3 files typically don't support EXIF metadata modification easily, 
+            # but you can add functionality to copy or organize them without skipping.
+            # For now, just copying them or handling them as a RAW file.
+        
+        # DNG files are more complex, so we can leave them untouched for now
+        elif image_path_str.endswith('dng'):
+            print(f"DNG file found, but metadata update skipped for {image_path}.")
+        
+    except Exception as e:
+        print(f"Error updating metadata for {image_path}: {e}")
+
 def remove_empty_folders(folder_path):
     """Remove empty folders."""
     for dirpath, dirnames, filenames in os.walk(folder_path, topdown=False):
@@ -103,39 +141,10 @@ def remove_empty_folders(folder_path):
             try:
                 os.rmdir(dir_to_check)
             except OSError:
-                pass
-
-def update_metadata(image_path, author_name):
-    """Update metadata of the image with the author's name using ExifTool."""
-    try:
-        # Convert path to string and ensure it's wrapped in quotes (to handle spaces in paths)
-        image_path_str = str(image_path)
-        image_path_str = f'"{image_path_str}"'  # Wrap the path in double quotes
-
-        # Exclude non-image files like .DS_Store
-        if not image_path_str.lower().endswith(('.jpg', '.jpeg', '.png', '.tiff', '.cr3', '.raw', '.dng')):
-            return
-
-        # Provide the full path to ExifTool on Windows
-        exiftool_path = r"C:\path\to\exiftool.exe"  # Update this path if ExifTool isn't in PATH
-        
-        # Ensure the ExifTool path is correctly specified
-        if not os.path.exists(exiftool_path):
-            print(f"ExifTool not found at {exiftool_path}. Please verify the path.")
-            return
-
-        # Build the command for ExifTool
-        command = [exiftool_path, '-overwrite_original', f'-Artist={author_name}', image_path_str]
-        
-        # Run the ExifTool command to update the metadata
-        subprocess.run(command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        print(f"Metadata updated for {image_path_str}")
-
-    except Exception as e:
-        print(f"Error updating metadata for {image_path}: {e}")
+                pass  
 
 def organize_photos(source_folder, destination_folders, author_name):
-    """Organize and copy photos with progress bar."""
+    """Organize and copy photos with progress bar, and update metadata."""
     file_counts = {}
     unique_files_processed = set()
 
@@ -201,15 +210,14 @@ def organize_photos(source_folder, destination_folders, author_name):
                             dest_path = category_folder / photo.name
                             if not dest_path.exists():
                                 shutil.copy2(photo.path, dest_path)
+                                # Update metadata with author's name after copying
+                                update_metadata(dest_path, author_name)
                                 processed_files += 1
                                 file_moved = True
 
                             if f"{current_month} {current_year}" not in file_counts:
                                 file_counts[f"{current_month} {current_year}"] = {cat: 0 for cat in subfolders}
                             file_counts[f"{current_month} {current_year}"][category] += 1
-
-                            # Update metadata after moving the file
-                            update_metadata(dest_path, author_name)
 
                     if not file_moved:
                         continue
@@ -222,50 +230,33 @@ def organize_photos(source_folder, destination_folders, author_name):
             # Update progress bar color based on progress
             progress_percentage = (idx + 1) / total_files * 100
             if progress_percentage < 33:
-                pbar.set_postfix_str("\033[31mProcessing...\033[0m")  # Red
+                pbar.set_postfix_str("\033[31mProcessing...\033[0m")
             elif progress_percentage < 66:
-                pbar.set_postfix_str("\033[33mProcessing...\033[0m")  # Yellow
+                pbar.set_postfix_str("\033[33mIn Progress...\033[0m")
             else:
-                pbar.set_postfix_str("\033[32mProcessing...\033[0m")  # Green
+                pbar.set_postfix_str("\033[32mAlmost done...\033[0m")
 
             pbar.update(1)
 
-    # Time taken
-    duration = datetime.now() - start_time
-    formatted_duration = str(duration).split('.')[0]
-    hours, minutes, seconds = map(int, formatted_duration.split(':'))
-    formatted_time = f"{hours:01}:{minutes:02}:{seconds:02}"
+    elapsed_time = datetime.now() - start_time
+    typing_effect(f"\nProcessing completed in {elapsed_time}", color="green")
+    typing_effect(f"Total files processed: {processed_files}", color="green")
 
-    typing_effect(f"Time taken: {formatted_time}", color="magenta")
+    # Remove empty folders
+    for folder in destination_folders:
+        remove_empty_folders(folder)
 
-    remove_empty_folders(source_folder)
-    for destination_folder in destination_folders:
-        remove_empty_folders(destination_folder)
+    # Ask if user wants to run the script again
+    if ask_run_again() == 'Y':
+        main()
 
-    return file_counts
+def main():
+    """Main function to run the script."""
+    source_folder = get_folder_path("Enter the source folder path:", color="yellow")
+    author_name = input("Enter the author's name: ").strip()
+    destination_folders = get_destination_folders()
+    organize_photos(source_folder, destination_folders, author_name)
 
+# Call the main function to start the script
 if __name__ == "__main__":
-    try:
-        typing_effect("Welcome to the Files Sorter !", color="green")
-        run_again = 'Y'
-        while run_again == 'Y':
-            source_folder = get_folder_path("Enter the source folder path:")
-            author_name = input("Enter the author's name for metadata update: ")
-            destination_folders = get_destination_folders()
-            file_counts = organize_photos(source_folder, destination_folders, author_name)
-
-            typing_effect("Processing complete. Files summary:", color="cyan")
-            for month, counts in file_counts.items():
-                output = f"\033[33m{month} - "
-                for idx, (key, value) in enumerate(counts.items()):
-                    if value > 0:
-                        output += f"\033[32m{key}: \033[37m{value}"
-                        if idx < len(counts) - 1:
-                            output += ", "
-                typing_effect(output, color="white", delay=0.04)
-            run_again = ask_run_again()
-
-        typing_effect("Goodbye !", color="cyan")
-
-    except KeyboardInterrupt:
-        typing_effect("\nScript interrupted by user. Goodbye!", color="red")
+    main()
