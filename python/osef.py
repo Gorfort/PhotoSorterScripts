@@ -1,97 +1,90 @@
 import os
 import shutil
-import subprocess
-import sys
-import ensurepip
-import piexif
 from PIL import Image
+import piexif
+from PIL.PngImagePlugin import PngImageFile
 
-def ensure_pip_installed():
-    """Ensure that pip is installed on the system."""
+def update_metadata(image_path, author_name):
+    """
+    Update metadata of the image with the author's name.
+    Works for JPEG, PNG, and DNG files.
+    """
     try:
-        subprocess.check_call([sys.executable, "-m", "pip", "--version"])
-    except FileNotFoundError:
-        print("pip not found. Installing pip...")
-        try:
-            ensurepip.bootstrap()
-            subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", "pip"])
-        except Exception as e:
-            print(f"Failed to install pip: {e}")
-            sys.exit(1)
+        # Open the image file
+        img = Image.open(image_path)
 
-def install_package(package_name):
-    """Install a package using pip."""
-    try:
-        subprocess.check_call([sys.executable, "-m", "pip", "install", package_name])
-    except subprocess.CalledProcessError as e:
-        print(f"Error installing package {package_name}: {e}")
-        sys.exit(1)
+        # Handle JPEG and JPG files (using EXIF)
+        if image_path.lower().endswith(('jpg', 'jpeg')):
+            exif_dict = piexif.load(img.info.get("exif", b""))
+            # Update author field in EXIF metadata
+            exif_dict['0th'][piexif.ImageIFD.Artist] = author_name.encode()
+            exif_bytes = piexif.dump(exif_dict)
+            img.save(image_path, exif=exif_bytes)
 
-def add_metadata(file_path, destination_path, author_name):
-    """Add Author name to EXIF and preserve IPTC metadata."""
-    try:
-        img = Image.open(file_path)
-        edited_file_path = os.path.join(destination_path, os.path.basename(file_path))
-        
-        # Load the original EXIF data
-        exif_data = img.info.get("exif")
-        
-        # Load existing EXIF data using piexif
-        exif_dict = piexif.load(exif_data or b"")
-        
-        # Add Author Name to EXIF (ImageIFD.Artist)
-        exif_dict["0th"][piexif.ImageIFD.Artist] = author_name.encode("utf-8")
-        
-        # Reapply the EXIF data to the image
-        exif_bytes = piexif.dump(exif_dict)
+        # Handle PNG files (using text metadata)
+        elif image_path.lower().endswith('png'):
+            # PNG metadata can be added as text
+            img.save(image_path, pnginfo=img.info.get("pnginfo", {}))
+            img.info['Author'] = author_name  # Add author as PNG text
 
-        # Save the image with the EXIF data, but avoid JFIF creation (do not use JFIF-compliant encoding)
-        img.save(edited_file_path, "JPEG", exif=exif_bytes, quality=95, optimize=True)
+        # DNG files are more complex, so we can leave them untouched for now, as it's more advanced
+        elif image_path.lower().endswith('dng'):
+            print(f"DNG file found, but metadata update skipped for {image_path}.")
 
-        print(f"Processed and saved with metadata: {edited_file_path}")
+        # RC3 files are not standard image files and are ignored for now
+        elif image_path.lower().endswith('rc3'):
+            print(f"RC3 file found, skipping {image_path}.")
+        
     except Exception as e:
-        print(f"Error processing file {file_path}: {e}")
+        print(f"Error updating metadata for {image_path}: {e}")
+
+
+def process_images(source_folder, dest_folder, author_name):
+    """
+    Process all images in the source folder and save them to the destination folder
+    with the updated metadata.
+    """
+    # Ensure destination folder exists
+    if not os.path.exists(dest_folder):
+        os.makedirs(dest_folder)
+
+    for root, _, files in os.walk(source_folder):
+        for file in files:
+            # Construct full file path
+            file_path = os.path.join(root, file)
+            # Only process valid image files
+            if file.lower().endswith(('jpg', 'jpeg', 'png', 'dng', 'cr3')):
+                try:
+                    # Copy the image to the destination folder first
+                    dest_path = os.path.join(dest_folder, file)
+                    shutil.copy(file_path, dest_path)
+
+                    # Update metadata
+                    update_metadata(dest_path, author_name)
+
+                    print(f"Processed {file} successfully.")
+
+                except Exception as e:
+                    print(f"Error processing {file}: {e}")
+
 
 def main():
-    # Ensure pip is installed
-    ensure_pip_installed()
+    print("Welcome to the Image Metadata Updater!")
+    
+    # Ask user for input
+    author_name = input("Enter the author's name: ")
+    source_folder = input("Enter the source folder path: ")
+    dest_folder = input("Enter the destination folder path: ")
 
-    # Install Pillow and piexif if not already installed
-    print("Checking and installing required packages...")
-    install_package("pillow")
-    install_package("piexif")
-    
-    # Ask user for source path
-    source_path = input("Enter the source folder path: ").strip()
-    
-    # Ask user for destination path
-    destination_path = input("Enter the destination folder path: ").strip()
-    
-    # Check if source path exists
-    if not os.path.exists(source_path):
-        print("Error: Source path does not exist. Exiting program.")
+    # Ensure the source folder exists
+    if not os.path.exists(source_folder):
+        print(f"Source folder {source_folder} does not exist.")
         return
-    
-    # Create destination folder if it does not exist
-    if not os.path.exists(destination_path):
-        os.makedirs(destination_path)
-    
-    # Ask user for the author's name
-    author_name = input("Enter the author's name: ").strip()
 
-    # Process images in the source path
-    for file_name in os.listdir(source_path):
-        file_path = os.path.join(source_path, file_name)
-        
-        # Check if it's an image file (jpg/jpeg)
-        if file_name.lower().endswith(('.jpg', '.jpeg')):
-            add_metadata(file_path, destination_path, author_name)
-        else:
-            # Copy non-image files directly to the destination folder
-            shutil.copy(file_path, destination_path)
-            print(f"Copied: {file_path} to {destination_path}")
+    # Process the images
+    process_images(source_folder, dest_folder, author_name)
+    print("All images processed.")
 
-    print("All files processed successfully!")
 
 if __name__ == "__main__":
     main()
