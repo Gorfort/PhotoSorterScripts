@@ -5,6 +5,9 @@ from pathlib import Path
 import subprocess
 import sys
 import time
+from tqdm import tqdm
+from PIL import Image
+from PIL.ExifTags import TAGS
 
 # Typing effect function to display text with delay
 def typing_effect(text, delay=0.02, color=None):
@@ -54,11 +57,6 @@ def install_packages():
 # Call install_packages at the start
 install_packages()
 
-# Import remaining modules
-from PIL import Image
-from PIL.ExifTags import TAGS
-from tqdm import tqdm  # Import tqdm for progress bar
-
 def get_folder_path(prompt, color="yellow"):
     """Prompt user for a valid folder path."""
     while True:
@@ -98,6 +96,25 @@ def get_destination_folders():
 
     return destinations
 
+def update_metadata(image_path, author_name):
+    """Update metadata of the image with the author's name."""
+    try:
+        # ExifTool command to update the author field
+        command = [
+            'exiftool',
+            '-overwrite_original',  # Overwrite the original file without creating a backup
+            f'-Artist={author_name}',  # The tag for the artist's name
+            image_path
+        ]
+        
+        # Run the ExifTool command
+        subprocess.run(command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+    except subprocess.CalledProcessError:
+        # Suppress error messages for specific files like .DS_Store
+        if not str(image_path).endswith('.DS_Store'):
+            print(f"Error updating metadata for {image_path}")
+
 def remove_empty_folders(folder_path):
     """Remove empty folders without printing messages."""
     for dirpath, dirnames, filenames in os.walk(folder_path, topdown=False):
@@ -108,7 +125,7 @@ def remove_empty_folders(folder_path):
             except OSError:
                 pass  
 
-def organize_photos(source_folder, destination_folders):
+def organize_photos(source_folder, destination_folders, author_name=None):
     """Organize and copy photos with progress bar."""
     file_counts = {}
     unique_files_processed = set()
@@ -175,6 +192,9 @@ def organize_photos(source_folder, destination_folders):
                             dest_path = category_folder / photo.name
                             if not dest_path.exists():
                                 shutil.copy2(photo.path, dest_path)
+                                # Update metadata with author's name after copying
+                                if author_name:
+                                    update_metadata(dest_path, author_name)
                                 processed_files += 1
                                 file_moved = True
 
@@ -201,13 +221,11 @@ def organize_photos(source_folder, destination_folders):
 
     # Format as hh:mm:ss
     formatted_time = f"{hours:01}:{minutes:02}:{seconds:02}"
-
     typing_effect(f"Time taken: {formatted_time}", color="magenta")
 
-    # Remove empty folders after processing
-    remove_empty_folders(source_folder)
-    for destination_folder in destination_folders:
-        remove_empty_folders(destination_folder)
+    # Remove empty folders
+    for folder in destination_folders:
+        remove_empty_folders(folder)
 
     return file_counts
 
@@ -216,12 +234,24 @@ if __name__ == "__main__":
         typing_effect("Welcome to the Files Sorter !", color="green")
         run_again = 'Y'
         while run_again == 'Y':
+            author_name = None
+            while True:
+                typing_effect("Do you want to enter an author's name? (Y/N)", delay=0.02)
+                enter_author_name = input().strip().upper()
+                if enter_author_name == 'Y':
+                    author_name = input("Enter the author's name: ").strip()
+                    break
+                elif enter_author_name == 'N':
+                    break
+                else:
+                    typing_effect("Invalid input. Please enter Y or N.", color="red")
             source_folder = get_folder_path("Enter the source folder path:")
             destination_folders = get_destination_folders()
-            file_counts = organize_photos(source_folder, destination_folders)
+            file_counts = organize_photos(source_folder, destination_folders, author_name)
 
             typing_effect("Processing complete. Files summary:", color="cyan")
-            for month, counts in file_counts.items():
+            for month in sorted(file_counts.keys(), key=lambda x: datetime.strptime(x, "%B %Y")):
+                counts = file_counts[month]
                 # Start the output for the month with the month name in yellow
                 output = f"\033[33m{month} - "  # Yellow for the month
 
