@@ -98,6 +98,10 @@ def get_destination_folders():
 
 def update_metadata(image_path, author_name):
     """Update metadata of the image with the author's name."""
+    # Skip updating metadata for specific files like .DS_Store and ._ files
+    if str(image_path).endswith('.DS_Store') or str(image_path).startswith('._'):
+        return
+
     try:
         # ExifTool command to update the author field
         command = [
@@ -111,9 +115,7 @@ def update_metadata(image_path, author_name):
         subprocess.run(command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     except subprocess.CalledProcessError:
-        # Suppress error messages for specific files like .DS_Store
-        if not str(image_path).endswith('.DS_Store'):
-            print(f"Error updating metadata for {image_path}")
+        print(f"Error updating metadata for {image_path}")
 
 def remove_empty_folders(folder_path):
     """Remove empty folders without printing messages."""
@@ -130,7 +132,7 @@ def organize_photos(source_folder, destination_folders, author_name=None):
     file_counts = {}
     unique_files_processed = set()
 
-    photos = [f for f in os.scandir(source_folder) if f.is_file()]
+    photos = [f for f in os.scandir(source_folder) if f.is_file() and not (f.name.startswith('._') or f.name == '.DS_Store')]
     total_files = len(photos)
     processed_files = 0
 
