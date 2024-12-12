@@ -1,0 +1,17 @@
+C:\Users\po44oov\source\repos\FilesSorterV1\FilesSorterV1\bin\Debug\net8.0-windows\FilesSorterV1.exe
+C:\Users\po44oov\source\repos\FilesSorterV1\FilesSorterV1\bin\Debug\net8.0-windows\FilesSorterV1.deps.json
+C:\Users\po44oov\source\repos\FilesSorterV1\FilesSorterV1\bin\Debug\net8.0-windows\FilesSorterV1.runtimeconfig.json
+C:\Users\po44oov\source\repos\FilesSorterV1\FilesSorterV1\bin\Debug\net8.0-windows\FilesSorterV1.dll
+C:\Users\po44oov\source\repos\FilesSorterV1\FilesSorterV1\bin\Debug\net8.0-windows\FilesSorterV1.pdb
+C:\Users\po44oov\source\repos\FilesSorterV1\FilesSorterV1\obj\Debug\net8.0-windows\FilesSorterV1.Form1.resources
+C:\Users\po44oov\source\repos\FilesSorterV1\FilesSorterV1\obj\Debug\net8.0-windows\FilesSorterV1.csproj.GenerateResource.cache
+C:\Users\po44oov\source\repos\FilesSorterV1\FilesSorterV1\obj\Debug\net8.0-windows\FilesSorterV1.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\po44oov\source\repos\FilesSorterV1\FilesSorterV1\obj\Debug\net8.0-windows\FilesSorterV1.AssemblyInfoInputs.cache
+C:\Users\po44oov\source\repos\FilesSorterV1\FilesSorterV1\obj\Debug\net8.0-windows\FilesSorterV1.AssemblyInfo.cs
+C:\Users\po44oov\source\repos\FilesSorterV1\FilesSorterV1\obj\Debug\net8.0-windows\FilesSorterV1.csproj.CoreCompileInputs.cache
+C:\Users\po44oov\source\repos\FilesSorterV1\FilesSorterV1\obj\Debug\net8.0-windows\FilesSorterV1.dll
+C:\Users\po44oov\source\repos\FilesSorterV1\FilesSorterV1\obj\Debug\net8.0-windows\refint\FilesSorterV1.dll
+C:\Users\po44oov\source\repos\FilesSorterV1\FilesSorterV1\obj\Debug\net8.0-windows\FilesSorterV1.pdb
+C:\Users\po44oov\source\repos\FilesSorterV1\FilesSorterV1\obj\Debug\net8.0-windows\FilesSorterV1.genruntimeconfig.cache
+C:\Users\po44oov\source\repos\FilesSorterV1\FilesSorterV1\obj\Debug\net8.0-windows\ref\FilesSorterV1.dll
+C:\Users\po44oov\source\repos\FilesSorterV1\FilesSorterV1\bin\Debug\net8.0-windows\FilesSorterV1.dll.config
