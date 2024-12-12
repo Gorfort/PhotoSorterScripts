@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             btnSource = new Button();
             progressBar1 = new ProgressBar();
             textBoxSource = new TextBox();
@@ -108,9 +109,9 @@
             label1.Font = new Font("Segoe UI", 15.75F, FontStyle.Bold, GraphicsUnit.Point, 0);
             label1.Location = new Point(12, 9);
             label1.Name = "label1";
-            label1.Size = new Size(156, 30);
+            label1.Size = new Size(140, 30);
             label1.TabIndex = 7;
-            label1.Text = "Author Printer";
+            label1.Text = "Photo Sorter";
             // 
             // label2
             // 
@@ -179,8 +180,9 @@
             Controls.Add(progressBar1);
             Controls.Add(btnSource);
             Controls.Add(panel1);
+            Icon = (Icon)resources.GetObject("$this.Icon");
             Name = "Form1";
-            Text = "Form1";
+            Text = "Photo Sorter";
             panel1.ResumeLayout(false);
             ResumeLayout(false);
             PerformLayout();
