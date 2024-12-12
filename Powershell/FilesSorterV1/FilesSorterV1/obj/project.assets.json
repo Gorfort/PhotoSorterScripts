@@ -14,11 +14,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\po44oov\\source\\repos\\FilesSorterV1\\FilesSorterV1\\FilesSorterV1.csproj",
+      "projectUniqueName": "C:\\Users\\po44oov\\Documents\\GitHub\\PhotoSorter-PowerShell\\Powershell\\FilesSorterV1\\FilesSorterV1\\FilesSorterV1.csproj",
       "projectName": "FilesSorterV1",
-      "projectPath": "C:\\Users\\po44oov\\source\\repos\\FilesSorterV1\\FilesSorterV1\\FilesSorterV1.csproj",
+      "projectPath": "C:\\Users\\po44oov\\Documents\\GitHub\\PhotoSorter-PowerShell\\Powershell\\FilesSorterV1\\FilesSorterV1\\FilesSorterV1.csproj",
       "packagesPath": "C:\\Users\\po44oov\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\po44oov\\source\\repos\\FilesSorterV1\\FilesSorterV1\\obj\\",
+      "outputPath": "C:\\Users\\po44oov\\Documents\\GitHub\\PhotoSorter-PowerShell\\Powershell\\FilesSorterV1\\FilesSorterV1\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
