@@ -94,13 +94,7 @@ function Sort-Files {
     
     $photos = Get-ChildItem -Path $sourceFolder -File
     $totalFiles = $photos.Count
-    if ($totalFiles -eq 0) {
-        [System.Windows.Forms.MessageBox]::Show("No files found in the source folder.", "Info", "OK", "Information")
-        return
-    }
-    
     $processedFiles = 0
-    $startTime = Get-Date
     $fileCounts = @{}
     
     foreach ($photo in $photos) {
@@ -110,7 +104,7 @@ function Sort-Files {
         }
         $currentMonth = $dateTaken.ToString("MMMM")
         $currentYear = $dateTaken.ToString("yyyy")
-
+        
         foreach ($destinationFolder in $destinationFolders) {
             $monthFolder = Join-Path -Path (Join-Path -Path $destinationFolder -ChildPath $currentYear) -ChildPath "$currentMonth $currentYear"
             $fileType = "Others"
@@ -125,7 +119,6 @@ function Sort-Files {
             }
             $typeFolder = Join-Path -Path $monthFolder -ChildPath $fileType
             
-            # Ensure the directories exist
             if (-not (Test-Path -Path $typeFolder)) {
                 New-Item -Path $typeFolder -ItemType Directory -Force | Out-Null
             }
@@ -137,14 +130,20 @@ function Sort-Files {
                 $progressBar.Value = ($processedFiles / $totalFiles) * 100
             }
             
-            if (-not $fileCounts.ContainsKey($fileType)) {
-                $fileCounts[$fileType] = 0
+            if (-not $fileCounts.ContainsKey($currentYear)) {
+                $fileCounts[$currentYear] = @{}
             }
-            $fileCounts[$fileType]++
+            if (-not $fileCounts[$currentYear].ContainsKey($currentMonth)) {
+                $fileCounts[$currentYear][$currentMonth] = @{}
+            }
+            if (-not $fileCounts[$currentYear][$currentMonth].ContainsKey($fileType)) {
+                $fileCounts[$currentYear][$currentMonth][$fileType] = 0
+            }
+            $fileCounts[$currentYear][$currentMonth][$fileType]++
         }
     }
     
-    $summaryTextBox.Text = "Processing complete.`r`n" + ($fileCounts.GetEnumerator() | ForEach-Object { "$($_.Key): $($_.Value)" }) -join "`r`n"
+    $summaryTextBox.Text = "Processing complete.`r`n" + ($fileCounts.GetEnumerator() | ForEach-Object { $_.Key + "`r`n" + ($_.Value.GetEnumerator() | ForEach-Object { "  " + $_.Key + "`r`n    " + ($_.Value.GetEnumerator() | ForEach-Object { $_.Key + ": " + $_.Value }) -join "`r`n" }) -join "`r`n" }) -join "`r`n"
 }
 
 # Show the GUI
