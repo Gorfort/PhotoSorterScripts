@@ -90,11 +90,22 @@ function AskRunAgain {
 
 # Function to ask the user if they want to add another folder
 function Get-DestinationFolders {
+    param(
+        [string]$SourceFolder  # Pass source folder to validate against
+    )
+
     $destinations = @()
 
     # Prompt for the first destination folder
-    $firstDest = Get-FolderPath -prompt "Enter the destination folder path"
-    $destinations += $firstDest
+    do {
+        $firstDest = Get-FolderPath -prompt "Enter the destination folder path"
+        if ($firstDest -eq $SourceFolder) {
+            Write-Typing "Destination folder cannot be the same as the source folder. Please enter a different folder." -delay 20 -color "Red"
+        } else {
+            $destinations += $firstDest
+            break
+        }
+    } while ($true)
 
     # Ask if the user wants to add more folders
     do {
@@ -110,16 +121,22 @@ function Get-DestinationFolders {
             }
         }
 
-        # Use it to write the line with mixed colors
         Write-TypingColored "Do you want to save the files in an additional folder? " -Delay 20 -Color "Yellow"
         Write-TypingColored "(Y/N)" -Delay 20 -Color "DarkGray"
-        Write-Host  # just to move to the next line
+        Write-Host
 
         $addAnother = Read-Host
         
         if ($addAnother -match '^(Y|y)$') {
-            $nextDest = Get-FolderPath -prompt "Enter the additional destination folder path" -delay 20 -color "Yellow"
-            $destinations += $nextDest
+            do {
+                $nextDest = Get-FolderPath -prompt "Enter the additional destination folder path"
+                if ($nextDest -eq $SourceFolder) {
+                    Write-Typing "Destination folder cannot be the same as the source folder. Please enter a different folder." -delay 20 -color "Red"
+                } else {
+                    $destinations += $nextDest
+                    break
+                }
+            } while ($true)
         } elseif ($addAnother -match '^(N|n)$') {
             break
         } else {
@@ -130,9 +147,6 @@ function Get-DestinationFolders {
     return $destinations
 }
 
-# Main script execution (rest of your script continues here...)
-
-
 # Initialize a hash table to track files by month and category
 $fileCounts = @{}
 # Create an array to track unique file names that have been processed
@@ -141,7 +155,7 @@ $uniqueFilesProcessed = @()
 # Main script execution loop
 do {
     $sourceFolder = Get-FolderPath -prompt "Enter the source folder path"
-    $destinationFolders = Get-DestinationFolders
+    $destinationFolders = Get-DestinationFolders -SourceFolder $sourceFolder    
 
     # Start timer
     $startTime = Get-Date
@@ -292,7 +306,9 @@ foreach ($photo in $photos) {
     Write-Progress -Activity " " -Status " " -Completed
 
     # Display file summary after processing
-    Write-TypingColored "Processing complete. Files summary:" -Delay 20 -Color "Cyan"
+    Write-TypingColored "Processing complete." -Delay 20 -Color "Green"
+    Write-Host
+    Write-TypingColored "Files summary:" -Delay 20 -Color "Magenta"
     Write-Host  # move to next line
 
 # Group months by year
@@ -307,10 +323,13 @@ foreach ($monthKey in $fileCounts.Keys) {
     $groupedByYear[$year][$monthKey] = $fileCounts[$monthKey]
 }
 
-# Display file summary with year headers
-foreach ($year in ($groupedByYear.Keys | Sort-Object)) {
-    Write-TypingColored "Year ${year}:" -Delay 20 -Color "Cyan"
-    Write-Host  # Add a line break after the year
+    # Display file summary with year headers
+    foreach ($year in ($groupedByYear.Keys | Sort-Object)) {
+    # Year label in one color, year number in another
+    Write-TypingColored "Year " -Delay 20 -Color "Cyan"
+    Write-TypingColored $year -Delay 20 -Color "Magenta"
+    Write-TypingColored ":" -Delay 20 -Color "Cyan"
+    Write-Host  # Move to next line
 
     # Sort months within this year
     $sortedMonths = $groupedByYear[$year].Keys | ForEach-Object {
@@ -349,10 +368,33 @@ foreach ($year in ($groupedByYear.Keys | Sort-Object)) {
     Write-TypingColored ("{0}h {1}m {2}s" -f $duration.Hours, $duration.Minutes, $duration.Seconds) -Delay 20 -Color "White"
     Write-Host ""  # move to next line
 
-    # Total files
-    Write-TypingColored "Total files: " -Delay 20 -Color "Magenta"
-    Write-TypingColored $totalFiles -Delay 20 -Color "White"
-    Write-Host ""  # move to next line
+    # Total files summary
+    Write-TypingColored "Total files summary: " -Delay 20 -Color "Magenta"
+    Write-Host  # move to next line
+
+    # Aggregate counts across all months
+    $totalCounts = @{ "RAW" = 0; "JPEG" = 0; "PNG" = 0; "Video" = 0; "Others" = 0 }
+
+    foreach ($monthKey in $fileCounts.Keys) {
+        foreach ($type in $fileCounts[$monthKey].Keys) {
+            $totalCounts[$type] += $fileCounts[$monthKey][$type]
+        }
+    }
+
+    # Display totals only if greater than 0
+    $first = $true
+    foreach ($type in $totalCounts.Keys) {
+        if ($totalCounts[$type] -gt 0) {
+            if (-not $first) {
+                Write-TypingColored ", " -Delay 20 -Color "White"
+            }
+            # Use ${type} to avoid variable parsing errors
+            Write-TypingColored "${type}: " -Delay 20 -Color "Blue"
+            Write-TypingColored $totalCounts[$type] -Delay 20 -Color "White"
+            $first = $false
+        }
+    }
+    Write-Host  # move to next line
 
     # Cleanup: Remove empty subfolders
     foreach ($destinationFolder in $destinationFolders) {
