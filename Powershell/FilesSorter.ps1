@@ -153,6 +153,20 @@ $processedFiles = 0
 $startTime = Get-Date
 $previousTime = $startTime
 
+function Get-DateTaken {
+    param([string]$FilePath)
+    try {
+        $img = [System.Drawing.Image]::FromFile($FilePath)
+        $propItem = $img.GetPropertyItem(36867)  # Date Taken
+        $dateTakenString = ([System.Text.Encoding]::ASCII.GetString($propItem.Value)).Trim([char]0)
+        $img.Dispose()
+        return [datetime]::ParseExact($dateTakenString, "yyyy:MM:dd HH:mm:ss", $null)
+    } catch {
+        # Optional: log that EXIF date was missing
+        return (Get-Item $FilePath).LastWriteTime
+    }
+}
+
 foreach ($photo in $photos) {
     try {
         # Check if the file has already been processed
@@ -161,7 +175,7 @@ foreach ($photo in $photos) {
         }
 
         # Get the Date Taken from metadata or use LastWriteTime as a fallback
-        $dateTaken = (Get-ItemProperty -Path $photo.FullName -Name DateTaken -ErrorAction SilentlyContinue).DateTaken
+        $dateTaken = Get-DateTaken -FilePath $photo.FullName
         if ($null -eq $dateTaken) {
             $dateTaken = $photo.LastWriteTime
         }
