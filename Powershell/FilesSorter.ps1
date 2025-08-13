@@ -51,7 +51,7 @@ function Get-DestinationFolders {
     $destinations = @()
 
     # Prompt for the first destination folder
-    $firstDest = Get-FolderPath -prompt "Enter the primary destination folder path"
+    $firstDest = Get-FolderPath -prompt "Enter the destination folder path"
     $destinations += $firstDest
 
     # Ask if the user wants to add more folders
@@ -200,8 +200,8 @@ foreach ($photo in $photos) {
         $estimatedRemainingTimeFormatted = "Calculating..."
     }
 
-# Update the progress bar and include the estimated remaining time in the Status message
-Write-Progress -Activity "Copying Files" -PercentComplete $percentComplete -Status "$processedFiles/$totalFiles files copied - $percentComplete% complete. Estimated Time Remaining: $estimatedRemainingTimeFormatted"
+    # Update the progress bar and include the estimated remaining time in the Status message
+    Write-Progress -Activity "Copying Files" -PercentComplete $percentComplete -Status "$processedFiles/$totalFiles files copied - $percentComplete% complete. Estimated Time Remaining: $estimatedRemainingTimeFormatted"
 
 
         # Estimate the remaining time
@@ -222,23 +222,43 @@ Write-Progress -Activity "Copying Files" -PercentComplete $percentComplete -Stat
     Write-Progress -Activity " " -Status " " -Completed
 
     # Display file summary after processing
-    Write-Typing "Processing complete. Files summary:" -delay 20 -color "Cyan"
-    $fileCounts.GetEnumerator() | ForEach-Object {
-        $monthKey = $_.Key
-        $counts = $_.Value
-        $output = "$monthKey -"
+Write-Typing "Processing complete. Files summary:" -delay 20 -color "Cyan"
 
-        # Build the output by including only counts greater than 0
-        $output += ($counts.Keys | Where-Object { $counts[$_] -gt 0 } | ForEach-Object { "$_ : $($counts[$_])" }) -join ", "
+$fileCounts.GetEnumerator() | ForEach-Object {
+    $monthKey = $_.Key
+    $counts = $_.Value
 
-        Write-Typing $output -delay 40 -color "Green"
+    # Print month key in green, stay on same line
+    Write-Host $monthKey -ForegroundColor Green -NoNewline
+    Write-Host " - " -ForegroundColor Green -NoNewline
+
+    # Print each type and count with colors
+    $first = $true
+    foreach ($type in $counts.Keys | Where-Object { $counts[$_] -gt 0 }) {
+        if (-not $first) {
+            Write-Host ", " -NoNewline
+        }
+        Write-Host $type -ForegroundColor Blue -NoNewline
+        Write-Host " : " -NoNewline
+        Write-Host $counts[$type] -ForegroundColor White -NoNewline
+        $first = $false
     }
 
-    # Calculate the time taken and display
-    $endTime = Get-Date
-    $duration = $endTime - $startTime
-    Write-Typing "Time taken: $($duration.Hours)h $($duration.Minutes)m $($duration.Seconds)s" -delay 20 -color "Magenta"
-    Write-Typing "Total files: $totalFiles" -delay 20 -color "Magenta"
+    # New line after each month
+    Write-Host
+}
+
+# Calculate the time taken and display
+$endTime = Get-Date
+$duration = $endTime - $startTime
+
+# Time taken
+Write-Host "Time taken: " -ForegroundColor Magenta -NoNewline
+Write-Host ("{0}h {1}m {2}s" -f $duration.Hours, $duration.Minutes, $duration.Seconds) -ForegroundColor White
+
+# Total files
+Write-Host "Total files: " -ForegroundColor Magenta -NoNewline
+Write-Host $totalFiles -ForegroundColor White
 
     # Cleanup: Remove empty subfolders
     foreach ($destinationFolder in $destinationFolders) {
