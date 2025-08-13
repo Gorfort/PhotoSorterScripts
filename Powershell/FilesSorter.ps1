@@ -1,45 +1,23 @@
-<#
+function Write-TypingColored {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$Text,
+        
+        [int]$Delay = 50,  # milliseconds per character
+        [ConsoleColor]$Color = [ConsoleColor]::White
+    )
 
-.NOTES
-File Name            : P-Script.ps1
-Requirements         : PowerShell 7.4.0
-Script version       : 1.0.5
-Author               : Thibaud Racine
-Creation date        : 13.12.23
-Location             : ETML Lausanne, Switzerland
+    $oldColor = $Host.UI.RawUI.ForegroundColor
+    $Host.UI.RawUI.ForegroundColor = $Color
 
-.SYNOPSIS
-This script is designed to organize and copy photos from a source folder to a
-to a destination folder. It classifies photos according to their file extension
-(CR3, JPEG, JPG, MP4, MOV, CMR, MXF and others) and places them in subfolders (RAW, JPEG, PNG, Video, Others)
-in the destination folder.
- 
-.DESCRIPTION
-The script prompts the user to enter a path to the source folder,
-and the path to the destination folders. It then copies the photos from the source to the destination 
-organizing them into sub-folders according to file type and metadata time.
- 
-.PARAMETER Extension
-.ps1
- 
-.INPUTS
-The script takes into account paths entered by the user.
- 
-.OUTPUTS
-The script organizes and copies photos according to specified criteria. 
-It provides information on the copying process and folder organization.
- 
-.EXAMPLE
-First enter into the directory where the script is located.
-- cd Script
-- .\FilesSorter.ps1
-This example shows how to run the script.
- 
-.LINK
-GitHub : https://github.com/Gorfort/PhotoSorter-PowerShell
+    foreach ($char in $Text.ToCharArray()) {
+        Write-Host -NoNewline $char
+        Start-Sleep -Milliseconds $Delay
+    }
 
-#>
-# Function to simulate typing effect
+    $Host.UI.RawUI.ForegroundColor = $oldColor
+}
+
 function Write-Typing {
     param (
         [string]$text,
@@ -78,12 +56,34 @@ function Get-FolderPath {
 # Function to ask the user if they want to run the script again
 function AskRunAgain {
     do {
-        Write-Typing "Do you want to run the script again? (Y/N)" -delay 20 -color "Yellow"
+        # Function to type text with delay and color
+        function Write-TypingColored {
+            param (
+                [string]$Text,
+                [int]$Delay = 20,
+                [string]$Color = "White"
+            )
+            foreach ($char in $Text.ToCharArray()) {
+                Write-Host -NoNewline $char -ForegroundColor $Color
+                Start-Sleep -Milliseconds $Delay
+            }
+        }
+
+        # Write the line with mixed colors
+        Write-TypingColored "Do you want to run the script again? " -Delay 20 -Color "Yellow"
+        Write-TypingColored "(Y/N)" -Delay 20 -Color "DarkGray"
+        Write-Host  # move to next line
+
         $choice = Read-Host
-        if ($choice -eq 'Y' -or $choice -eq 'N') {
+        if ($choice -eq 'Y') {
+            return $choice
+        } elseif ($choice -eq 'N') {
+            Write-TypingColored "Goodbye!" -Delay 20 -Color "Blue"
+            Write-Host
             return $choice
         } else {
-            Write-Typing "Invalid choice. Please enter Y or N." -delay 20 -color "Red"
+            Write-TypingColored "Invalid choice. Please enter Y or N." -Delay 20 -Color "Red"
+            Write-Host
         }
     } while ($true)
 }
@@ -93,12 +93,28 @@ function Get-DestinationFolders {
     $destinations = @()
 
     # Prompt for the first destination folder
-    $firstDest = Get-FolderPath -prompt "Enter the primary destination folder path"
+    $firstDest = Get-FolderPath -prompt "Enter the destination folder path"
     $destinations += $firstDest
 
     # Ask if the user wants to add more folders
     do {
-        Write-Typing "Do you want to save the files in an additional folder? (Y/N)" -delay 20 -color "Yellow"
+        function Write-TypingColored {
+            param (
+                [string]$Text,
+                [int]$Delay = 20,
+                [string]$Color = "White"
+            )
+            foreach ($char in $Text.ToCharArray()) {
+                Write-Host -NoNewline $char -ForegroundColor $Color
+                Start-Sleep -Milliseconds $Delay
+            }
+        }
+
+        # Use it to write the line with mixed colors
+        Write-TypingColored "Do you want to save the files in an additional folder? " -Delay 20 -Color "Yellow"
+        Write-TypingColored "(Y/N)" -Delay 20 -Color "DarkGray"
+        Write-Host  # just to move to the next line
+
         $addAnother = Read-Host
         
         if ($addAnother -match '^(Y|y)$') {
@@ -137,6 +153,20 @@ $processedFiles = 0
 $startTime = Get-Date
 $previousTime = $startTime
 
+function Get-DateTaken {
+    param([string]$FilePath)
+    try {
+        $img = [System.Drawing.Image]::FromFile($FilePath)
+        $propItem = $img.GetPropertyItem(36867)  # Date Taken
+        $dateTakenString = ([System.Text.Encoding]::ASCII.GetString($propItem.Value)).Trim([char]0)
+        $img.Dispose()
+        return [datetime]::ParseExact($dateTakenString, "yyyy:MM:dd HH:mm:ss", $null)
+    } catch {
+        # Optional: log that EXIF date was missing
+        return (Get-Item $FilePath).LastWriteTime
+    }
+}
+
 foreach ($photo in $photos) {
     try {
         # Check if the file has already been processed
@@ -145,7 +175,7 @@ foreach ($photo in $photos) {
         }
 
         # Get the Date Taken from metadata or use LastWriteTime as a fallback
-        $dateTaken = (Get-ItemProperty -Path $photo.FullName -Name DateTaken -ErrorAction SilentlyContinue).DateTaken
+        $dateTaken = Get-DateTaken -FilePath $photo.FullName
         if ($null -eq $dateTaken) {
             $dateTaken = $photo.LastWriteTime
         }
@@ -232,8 +262,19 @@ foreach ($photo in $photos) {
         $timeElapsed = $currentTime - $previousTime
         $previousTime = $currentTime
 
-        # Calculate the average time per file
+    # Calculate the average time per file and estimated remaining time safely
+    if ($processedFiles -gt 0) {
         $averageTimePerFile = ($currentTime - $startTime).TotalSeconds / $processedFiles
+        $remainingFiles = $totalFiles - $processedFiles
+        $estimatedRemainingTime = $remainingFiles * $averageTimePerFile
+        $estimatedRemainingTimeFormatted = [TimeSpan]::FromSeconds($estimatedRemainingTime).ToString("hh\:mm\:ss")
+    } else {
+        $estimatedRemainingTimeFormatted = "Calculating..."
+    }
+
+    # Update the progress bar and include the estimated remaining time in the Status message
+    Write-Progress -Activity "Copying Files" -PercentComplete $percentComplete -Status "$processedFiles/$totalFiles files copied - $percentComplete% complete. Estimated Time Remaining: $estimatedRemainingTimeFormatted"
+
 
         # Estimate the remaining time
         $remainingFiles = $totalFiles - $processedFiles
@@ -247,28 +288,71 @@ foreach ($photo in $photos) {
         Write-Host "Error processing $($photo.Name): $_" -ForegroundColor Red
     }
 }
-
-
     # Clear the progress bar after copying is complete
     Write-Progress -Activity " " -Status " " -Completed
 
     # Display file summary after processing
-    Write-Typing "Processing complete. Files summary:" -delay 20 -color "Cyan"
-    $fileCounts.GetEnumerator() | ForEach-Object {
-        $monthKey = $_.Key
-        $counts = $_.Value
-        $output = "$monthKey -"
+    Write-TypingColored "Processing complete. Files summary:" -Delay 20 -Color "Cyan"
+    Write-Host  # move to next line
 
-        # Build the output by including only counts greater than 0
-        $output += ($counts.Keys | Where-Object { $counts[$_] -gt 0 } | ForEach-Object { "$_ : $($counts[$_])" }) -join ", "
+# Group months by year
+$groupedByYear = @{}
+foreach ($monthKey in $fileCounts.Keys) {
+    $date = [datetime]::ParseExact($monthKey, "MMMM yyyy", $null)
+    $year = $date.Year
 
-        Write-Typing $output -delay 40 -color "Green"
+    if (-not $groupedByYear.ContainsKey($year)) {
+        $groupedByYear[$year] = @{}
     }
+    $groupedByYear[$year][$monthKey] = $fileCounts[$monthKey]
+}
+
+# Display file summary with year headers
+foreach ($year in ($groupedByYear.Keys | Sort-Object)) {
+    Write-TypingColored "Year ${year}:" -Delay 20 -Color "Cyan"
+    Write-Host  # Add a line break after the year
+
+    # Sort months within this year
+    $sortedMonths = $groupedByYear[$year].Keys | ForEach-Object {
+        [PSCustomObject]@{
+            Key = $_
+            Date = [datetime]::ParseExact($_, "MMMM yyyy", $null)
+        }
+    } | Sort-Object Date
+
+    foreach ($monthEntry in $sortedMonths) {
+        $monthKey = $monthEntry.Key
+        $counts = $groupedByYear[$year][$monthKey]
+
+        # Month name with delay
+        Write-TypingColored "  $monthKey - " -Delay 20 -Color "Green"
+
+        $first = $true
+        foreach ($type in $counts.Keys | Where-Object { $counts[$_] -gt 0 }) {
+            if (-not $first) {
+                Write-TypingColored ", " -Delay 20 -Color "White"
+            }
+            Write-TypingColored "$type : " -Delay 20 -Color "Blue"
+            Write-TypingColored $counts[$type] -Delay 20 -Color "White"
+            $first = $false
+        }
+        Write-Host  # move to next line
+    }
+}
 
     # Calculate the time taken and display
     $endTime = Get-Date
     $duration = $endTime - $startTime
-    Write-Typing "Time taken: $($duration.Hours)h $($duration.Minutes)m $($duration.Seconds)s" -delay 20 -color "Magenta"
+
+    # Time taken
+    Write-TypingColored "Time taken: " -Delay 20 -Color "Magenta"
+    Write-TypingColored ("{0}h {1}m {2}s" -f $duration.Hours, $duration.Minutes, $duration.Seconds) -Delay 20 -Color "White"
+    Write-Host ""  # move to next line
+
+    # Total files
+    Write-TypingColored "Total files: " -Delay 20 -Color "Magenta"
+    Write-TypingColored $totalFiles -Delay 20 -Color "White"
+    Write-Host ""  # move to next line
 
     # Cleanup: Remove empty subfolders
     foreach ($destinationFolder in $destinationFolders) {
