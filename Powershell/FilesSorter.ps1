@@ -1,45 +1,3 @@
-<#
-
-.NOTES
-File Name            : P-Script.ps1
-Requirements         : PowerShell 7.4.0
-Script version       : 1.0.5
-Author               : Thibaud Racine
-Creation date        : 13.12.23
-Location             : ETML Lausanne, Switzerland
-
-.SYNOPSIS
-This script is designed to organize and copy photos from a source folder to a
-to a destination folder. It classifies photos according to their file extension
-(CR3, JPEG, JPG, MP4, MOV, CMR, MXF and others) and places them in subfolders (RAW, JPEG, PNG, Video, Others)
-in the destination folder.
- 
-.DESCRIPTION
-The script prompts the user to enter a path to the source folder,
-and the path to the destination folders. It then copies the photos from the source to the destination 
-organizing them into sub-folders according to file type and metadata time.
- 
-.PARAMETER Extension
-.ps1
- 
-.INPUTS
-The script takes into account paths entered by the user.
- 
-.OUTPUTS
-The script organizes and copies photos according to specified criteria. 
-It provides information on the copying process and folder organization.
- 
-.EXAMPLE
-First enter into the directory where the script is located.
-- cd Script
-- .\FilesSorter.ps1
-This example shows how to run the script.
- 
-.LINK
-GitHub : https://github.com/Gorfort/PhotoSorter-PowerShell
-
-#>
-# Function to simulate typing effect
 function Write-Typing {
     param (
         [string]$text,
@@ -232,8 +190,19 @@ foreach ($photo in $photos) {
         $timeElapsed = $currentTime - $previousTime
         $previousTime = $currentTime
 
-        # Calculate the average time per file
+    # Calculate the average time per file and estimated remaining time safely
+    if ($processedFiles -gt 0) {
         $averageTimePerFile = ($currentTime - $startTime).TotalSeconds / $processedFiles
+        $remainingFiles = $totalFiles - $processedFiles
+        $estimatedRemainingTime = $remainingFiles * $averageTimePerFile
+        $estimatedRemainingTimeFormatted = [TimeSpan]::FromSeconds($estimatedRemainingTime).ToString("hh\:mm\:ss")
+    } else {
+        $estimatedRemainingTimeFormatted = "Calculating..."
+    }
+
+# Update the progress bar and include the estimated remaining time in the Status message
+Write-Progress -Activity "Copying Files" -PercentComplete $percentComplete -Status "$processedFiles/$totalFiles files copied - $percentComplete% complete. Estimated Time Remaining: $estimatedRemainingTimeFormatted"
+
 
         # Estimate the remaining time
         $remainingFiles = $totalFiles - $processedFiles
@@ -269,6 +238,7 @@ foreach ($photo in $photos) {
     $endTime = Get-Date
     $duration = $endTime - $startTime
     Write-Typing "Time taken: $($duration.Hours)h $($duration.Minutes)m $($duration.Seconds)s" -delay 20 -color "Magenta"
+    Write-Typing "Total files: $totalFiles" -delay 20 -color "Magenta"
 
     # Cleanup: Remove empty subfolders
     foreach ($destinationFolder in $destinationFolders) {
