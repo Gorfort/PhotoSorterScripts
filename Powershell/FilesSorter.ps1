@@ -1,3 +1,23 @@
+function Write-TypingColored {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$Text,
+        
+        [int]$Delay = 50,  # milliseconds per character
+        [ConsoleColor]$Color = [ConsoleColor]::White
+    )
+
+    $oldColor = $Host.UI.RawUI.ForegroundColor
+    $Host.UI.RawUI.ForegroundColor = $Color
+
+    foreach ($char in $Text.ToCharArray()) {
+        Write-Host -NoNewline $char
+        Start-Sleep -Milliseconds $Delay
+    }
+
+    $Host.UI.RawUI.ForegroundColor = $oldColor
+}
+
 function Write-Typing {
     param (
         [string]$text,
@@ -36,12 +56,34 @@ function Get-FolderPath {
 # Function to ask the user if they want to run the script again
 function AskRunAgain {
     do {
-        Write-Typing "Do you want to run the script again? (Y/N)" -delay 20 -color "Yellow"
+        # Function to type text with delay and color
+        function Write-TypingColored {
+            param (
+                [string]$Text,
+                [int]$Delay = 20,
+                [string]$Color = "White"
+            )
+            foreach ($char in $Text.ToCharArray()) {
+                Write-Host -NoNewline $char -ForegroundColor $Color
+                Start-Sleep -Milliseconds $Delay
+            }
+        }
+
+        # Write the line with mixed colors
+        Write-TypingColored "Do you want to run the script again? " -Delay 20 -Color "Yellow"
+        Write-TypingColored "(Y/N)" -Delay 20 -Color "DarkGray"
+        Write-Host  # move to next line
+
         $choice = Read-Host
-        if ($choice -eq 'Y' -or $choice -eq 'N') {
+        if ($choice -eq 'Y') {
+            return $choice
+        } elseif ($choice -eq 'N') {
+            Write-TypingColored "Goodbye!" -Delay 20 -Color "Blue"
+            Write-Host
             return $choice
         } else {
-            Write-Typing "Invalid choice. Please enter Y or N." -delay 20 -color "Red"
+            Write-TypingColored "Invalid choice. Please enter Y or N." -Delay 20 -Color "Red"
+            Write-Host
         }
     } while ($true)
 }
@@ -56,7 +98,23 @@ function Get-DestinationFolders {
 
     # Ask if the user wants to add more folders
     do {
-        Write-Typing "Do you want to save the files in an additional folder? (Y/N)" -delay 20 -color "Yellow"
+        function Write-TypingColored {
+            param (
+                [string]$Text,
+                [int]$Delay = 20,
+                [string]$Color = "White"
+            )
+            foreach ($char in $Text.ToCharArray()) {
+                Write-Host -NoNewline $char -ForegroundColor $Color
+                Start-Sleep -Milliseconds $Delay
+            }
+        }
+
+        # Use it to write the line with mixed colors
+        Write-TypingColored "Do you want to save the files in an additional folder? " -Delay 20 -Color "Yellow"
+        Write-TypingColored "(Y/N)" -Delay 20 -Color "DarkGray"
+        Write-Host  # just to move to the next line
+
         $addAnother = Read-Host
         
         if ($addAnother -match '^(Y|y)$') {
@@ -216,49 +274,71 @@ foreach ($photo in $photos) {
         Write-Host "Error processing $($photo.Name): $_" -ForegroundColor Red
     }
 }
-
-
     # Clear the progress bar after copying is complete
     Write-Progress -Activity " " -Status " " -Completed
 
     # Display file summary after processing
-Write-Typing "Processing complete. Files summary:" -delay 20 -color "Cyan"
+    Write-TypingColored "Processing complete. Files summary:" -Delay 20 -Color "Cyan"
+    Write-Host  # move to next line
 
-$fileCounts.GetEnumerator() | ForEach-Object {
-    $monthKey = $_.Key
-    $counts = $_.Value
+# Group months by year
+$groupedByYear = @{}
+foreach ($monthKey in $fileCounts.Keys) {
+    $date = [datetime]::ParseExact($monthKey, "MMMM yyyy", $null)
+    $year = $date.Year
 
-    # Print month key in green, stay on same line
-    Write-Host $monthKey -ForegroundColor Green -NoNewline
-    Write-Host " - " -ForegroundColor Green -NoNewline
-
-    # Print each type and count with colors
-    $first = $true
-    foreach ($type in $counts.Keys | Where-Object { $counts[$_] -gt 0 }) {
-        if (-not $first) {
-            Write-Host ", " -NoNewline
-        }
-        Write-Host $type -ForegroundColor Blue -NoNewline
-        Write-Host " : " -NoNewline
-        Write-Host $counts[$type] -ForegroundColor White -NoNewline
-        $first = $false
+    if (-not $groupedByYear.ContainsKey($year)) {
+        $groupedByYear[$year] = @{}
     }
-
-    # New line after each month
-    Write-Host
+    $groupedByYear[$year][$monthKey] = $fileCounts[$monthKey]
 }
 
-# Calculate the time taken and display
-$endTime = Get-Date
-$duration = $endTime - $startTime
+# Display file summary with year headers
+foreach ($year in ($groupedByYear.Keys | Sort-Object)) {
+    Write-TypingColored "Year ${year}:" -Delay 20 -Color "Cyan"
+    Write-Host  # Add a line break after the year
 
-# Time taken
-Write-Host "Time taken: " -ForegroundColor Magenta -NoNewline
-Write-Host ("{0}h {1}m {2}s" -f $duration.Hours, $duration.Minutes, $duration.Seconds) -ForegroundColor White
+    # Sort months within this year
+    $sortedMonths = $groupedByYear[$year].Keys | ForEach-Object {
+        [PSCustomObject]@{
+            Key = $_
+            Date = [datetime]::ParseExact($_, "MMMM yyyy", $null)
+        }
+    } | Sort-Object Date
 
-# Total files
-Write-Host "Total files: " -ForegroundColor Magenta -NoNewline
-Write-Host $totalFiles -ForegroundColor White
+    foreach ($monthEntry in $sortedMonths) {
+        $monthKey = $monthEntry.Key
+        $counts = $groupedByYear[$year][$monthKey]
+
+        # Month name with delay
+        Write-TypingColored "  $monthKey - " -Delay 20 -Color "Green"
+
+        $first = $true
+        foreach ($type in $counts.Keys | Where-Object { $counts[$_] -gt 0 }) {
+            if (-not $first) {
+                Write-TypingColored ", " -Delay 20 -Color "White"
+            }
+            Write-TypingColored "$type : " -Delay 20 -Color "Blue"
+            Write-TypingColored $counts[$type] -Delay 20 -Color "White"
+            $first = $false
+        }
+        Write-Host  # move to next line
+    }
+}
+
+    # Calculate the time taken and display
+    $endTime = Get-Date
+    $duration = $endTime - $startTime
+
+    # Time taken
+    Write-TypingColored "Time taken: " -Delay 20 -Color "Magenta"
+    Write-TypingColored ("{0}h {1}m {2}s" -f $duration.Hours, $duration.Minutes, $duration.Seconds) -Delay 20 -Color "White"
+    Write-Host ""  # move to next line
+
+    # Total files
+    Write-TypingColored "Total files: " -Delay 20 -Color "Magenta"
+    Write-TypingColored $totalFiles -Delay 20 -Color "White"
+    Write-Host ""  # move to next line
 
     # Cleanup: Remove empty subfolders
     foreach ($destinationFolder in $destinationFolders) {
