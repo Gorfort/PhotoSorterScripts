@@ -335,24 +335,28 @@ Write-TypingColored "Time taken: " -Delay 20 -Color "Magenta"
 Write-TypingColored ("{0}h {1}m {2}s" -f $duration.Hours, $duration.Minutes, $duration.Seconds) -Delay 20 -Color "White"
 Write-Host
 
-# Print the label in Magenta
+# Print the label in Magenta and animate total files
 Write-Host -NoNewline "Total files: " -ForegroundColor Magenta
-
-# Animate the number in White
 for ($i = 0; $i -le $totalFiles; $i += [Math]::Max([Math]::Ceiling($totalFiles / 100),1)) {
     if ($i -gt $totalFiles) { $i = $totalFiles }
 
-    # Move cursor to the correct position after the label
     $cursorLeft = ("Total files: ").Length
     $cursorTop = [Console]::CursorTop
     [Console]::SetCursorPosition($cursorLeft, $cursorTop)
 
-    # Write the number in White
     Write-Host ("{0}   " -f $i) -NoNewline -ForegroundColor White
-
     Start-Sleep -Milliseconds 5
 }
-Write-Host ""  # finish the line cleanly
+Write-Host ""  # finish the line
+
+# Calculate total size in GB
+$totalSizeBytes = ($photos | Measure-Object -Property Length -Sum).Sum
+$totalSizeGB = [Math]::Round($totalSizeBytes / 1GB, 2)
+
+# Display total size transferred
+Write-TypingColored "Total size transferred: " -Delay 20 -Color "Magenta"
+Write-TypingColored "$totalSizeGB GB" -Delay 20 -Color "White"
+Write-Host
 
 # Cleanup empty subfolders
 foreach ($destinationFolder in $destinationFolders) {
