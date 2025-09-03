@@ -300,12 +300,12 @@ do {
             $counts = $groupedByYear[$year][$monthKey]
 
             # Print the month header
-            Write-TypingColored "  $monthKey :" -Delay 20 -Color "DarkGreen"
+            Write-TypingColored "  $monthKey :" -Delay 20 -Color "Green"
             Write-Host
 
             foreach ($type in $counts.Keys | Where-Object { $counts[$_] -gt 0 }) {
                 # Print the label in Green
-                Write-Host -NoNewline "    $type files: " -ForegroundColor DarkGreen
+                Write-Host -NoNewline "    $type files: " -ForegroundColor Green
 
                 # Animate the number in White
                 for ($i = 0; $i -le $counts[$type]; $i += [Math]::Max([Math]::Ceiling($counts[$type] / 100),1)) {
